@@ -2,6 +2,12 @@
 
 Todas as mudanças notáveis neste repo são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.1] — 2026-09-24
+
+### Corrigido
+
+- install.py: erro "VERSION is not a directory" em sparse-checkout. Substituído por clone raso (mais robusto, repo é pequeno ~5MB).
+
 ## [1.1.0] — 2026-09-24
 
 ### Adicionado

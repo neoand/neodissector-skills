@@ -72,22 +72,21 @@ def run_git(
 
 
 def fetch_version(repo: str, ref: str) -> str:
-    """Lê VERSION do remote sem clonar tudo."""
+    """Lê VERSION do remote via clone raso."""
     log(f"Consultando VERSION do remote ({repo}@{ref})...")
     with tempfile.TemporaryDirectory(prefix=".tmp-clone-") as tmpdir:
         tmp = pathlib.Path(tmpdir)
-        # Sparse checkout só do VERSION
+        # Clone raso: repo é pequeno (~5MB) e isso é robusto.
+        # (sparse-checkout com VERSION-arquivo falha: 'is not a directory'.)
         run_git(
             "clone",
             "--depth=1",
-            "--filter=blob:none",
-            "--sparse",
+            "--branch",
+            ref,
             repo,
             str(tmp),
             check=True,
         )
-        run_git("sparse-checkout", "set", "VERSION", cwd=tmp, check=True)
-        run_git("checkout", ref, cwd=tmp, check=True)
         version_file = tmp / "VERSION"
         if not version_file.exists():
             err(f"VERSION não encontrado em {repo}@{ref}")
