@@ -20,19 +20,13 @@ Esta lista é gerenciada por Anderson. Cada item tem:
 
 ### Adicionar `bug_init.py` ao neodissector-bug
 
-- **Status**: proposto
-- **Prioridade**: P2
-- **Estimativa**: 4h
-- **Motivação**: o `neodissector-bug` SKILL.md documenta o schema completo e os 4 modos, mas falta CLI helper para criar `bug.md` com frontmatter válido a partir de um comando.
-- **Saída esperada**: `~/.agents/skills/neodissector-bug/resources/scripts/bug_init.py "..."` cria `dissects/<s>/bugs/BUG-YYYYMMDD-XXXX/bug.md` com frontmatter canônico.
+- **Status**: ✅ **concluído em 2026-09-24** (v1.1.0)
+- **Saída entregue**: `skills/neodissector-bug/resources/scripts/bug_init.py` (~220 linhas, CLI com `init` + `list`, ID sequencial `BUG-YYYYMMDD-XXXX`, frontmatter canônico, skeleton de 10 seções).
 
 ### Adicionar `migration_init.py` ao neodissector-migration
 
-- **Status**: proposto
-- **Prioridade**: P2
-- **Estimativa**: 4h
-- **Motivação**: análogo ao bug_init.
-- **Saída esperada**: scaffold de `migration/{paradigm_decision.md,curator_decisions.md,strategy.md,target_*.md,parity_specs.md,parity_tests/}` a partir de `extract/components.md`.
+- **Status**: ✅ **concluído em 2026-09-24** (v1.1.0)
+- **Saída entregue**: `skills/neodissector-migration/resources/scripts/migration_init.py` (~150 linhas, scaffold de 8 arquivos + 1 pasta parity_tests/).
 
 ### Adicionar testes para `verify-invocation.py` e `legacy_policy.py`
 

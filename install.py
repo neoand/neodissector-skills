@@ -23,6 +23,7 @@ Exit codes:
     0 = sucesso (ou dry-run sem mudanças)
     1 = erro (rede, permissão, conflito)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -50,7 +51,9 @@ def err(msg: str) -> None:
     print(f"[! neodissector-install] {msg}", file=sys.stderr)
 
 
-def run_git(*args: str, cwd: pathlib.Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+def run_git(
+    *args: str, cwd: pathlib.Path | None = None, check: bool = True
+) -> subprocess.CompletedProcess:
     """Wrapper de git com mensagens claras."""
     result = subprocess.run(
         ["git"] + list(args),
@@ -74,7 +77,15 @@ def fetch_version(repo: str, ref: str) -> str:
     with tempfile.TemporaryDirectory(prefix=".tmp-clone-") as tmpdir:
         tmp = pathlib.Path(tmpdir)
         # Sparse checkout só do VERSION
-        run_git("clone", "--depth=1", "--filter=blob:none", "--sparse", repo, str(tmp), check=True)
+        run_git(
+            "clone",
+            "--depth=1",
+            "--filter=blob:none",
+            "--sparse",
+            repo,
+            str(tmp),
+            check=True,
+        )
         run_git("sparse-checkout", "set", "VERSION", cwd=tmp, check=True)
         run_git("checkout", ref, cwd=tmp, check=True)
         version_file = tmp / "VERSION"
@@ -114,7 +125,9 @@ def install_skills(
             return 0
         # Se target não está vazio, abortar
         if any(target.iterdir()):
-            err(f"{target} já existe e não é vazio. Use --update ou apague manualmente.")
+            err(
+                f"{target} já existe e não é vazio. Use --update ou apague manualmente."
+            )
             return 1
         run_git("clone", "--branch", ref, repo, str(target))
         log(f"✓ Instalado em {target}")
@@ -135,11 +148,15 @@ def install_skills(
     if not update and is_existing_repo:
         # Verificar se é o mesmo remote
         try:
-            remote_url = run_git("remote", "get-url", "origin", cwd=target, check=False).stdout.strip()
+            remote_url = run_git(
+                "remote", "get-url", "origin", cwd=target, check=False
+            ).stdout.strip()
         except subprocess.CalledProcessError:
             remote_url = ""
         if "neodissector-skills" not in remote_url:
-            err(f"{target} é um clone mas não é do neodissector-skills (remote={remote_url!r})")
+            err(
+                f"{target} é um clone mas não é do neodissector-skills (remote={remote_url!r})"
+            )
             err("Para forçar: apague manualmente e rode sem --update.")
             return 1
         # Mesmo remote, oferece update
@@ -152,7 +169,9 @@ def install_skills(
 
 def verify_install(target: pathlib.Path) -> bool:
     """Roda verify-invocation.py no target instalado. Retorna True se APROVADO."""
-    verify_script = target / "system-dissector" / "resources" / "scripts" / "verify-invocation.py"
+    verify_script = (
+        target / "system-dissector" / "resources" / "scripts" / "verify-invocation.py"
+    )
     if not verify_script.exists():
         err(f"verify-invocation.py não encontrado em {verify_script}")
         return False
@@ -164,13 +183,30 @@ def verify_install(target: pathlib.Path) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", help="tag/versão específica (e.g., 1.0.0, v1.0.0)")
-    parser.add_argument("--ref", default=DEFAULT_REF, help=f"branch/ref (default: {DEFAULT_REF})")
-    parser.add_argument("--repo", default=DEFAULT_REPO, help=f"URL do repo (default: {DEFAULT_REPO})")
-    parser.add_argument("--target", type=pathlib.Path, default=DEFAULT_TARGET, help=f"diretório alvo (default: {DEFAULT_TARGET})")
+    parser.add_argument(
+        "--ref", default=DEFAULT_REF, help=f"branch/ref (default: {DEFAULT_REF})"
+    )
+    parser.add_argument(
+        "--repo", default=DEFAULT_REPO, help=f"URL do repo (default: {DEFAULT_REPO})"
+    )
+    parser.add_argument(
+        "--target",
+        type=pathlib.Path,
+        default=DEFAULT_TARGET,
+        help=f"diretório alvo (default: {DEFAULT_TARGET})",
+    )
     parser.add_argument("--dry-run", action="store_true", help="só mostra o que faria")
-    parser.add_argument("--update", action="store_true", help="atualizar clone existente")
-    parser.add_argument("--skip-verify", action="store_true", help="pula verify-invocation.py após install")
-    parser.add_argument("--force", action="store_true", help="sobrescreve target não-vazio (perigoso)")
+    parser.add_argument(
+        "--update", action="store_true", help="atualizar clone existente"
+    )
+    parser.add_argument(
+        "--skip-verify",
+        action="store_true",
+        help="pula verify-invocation.py após install",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="sobrescreve target não-vazio (perigoso)"
+    )
 
     args = parser.parse_args()
 
@@ -203,7 +239,9 @@ def main() -> int:
     if not args.update and not args.force and args.target.exists():
         if any(args.target.iterdir()):
             err(f"{args.target} já existe e não é vazio.")
-            err("Use --update para atualizar OU --force para sobrescrever (perigoso, apaga customizações).")
+            err(
+                "Use --update para atualizar OU --force para sobrescrever (perigoso, apaga customizações)."
+            )
             return 1
 
     # Instalar
@@ -222,7 +260,9 @@ def main() -> int:
     if not args.dry_run and not args.skip_verify:
         if not verify_install(args.target):
             err("Install OK mas verify-invocation.py FALHOU. Veja saída acima.")
-            err("Reporte o problema em https://github.com/neoand/neodissector-skills/issues")
+            err(
+                "Reporte o problema em https://github.com/neoand/neodissector-skills/issues"
+            )
             return 1
 
     log("")

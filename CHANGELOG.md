@@ -2,6 +2,22 @@
 
 Todas as mudanças notáveis neste repo são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.1.0] — 2026-09-24
+
+### Adicionado
+
+- `skills/neodissector-bug/resources/scripts/bug_init.py` — CLI helper que cria `dissects/<contexto>/bugs/<BUG-YYYYMMDD-XXXX>/bug.md` com frontmatter canônico + skeleton completo (10 seções). Suporta `--list` para listar bugs.
+- `skills/neodissector-migration/resources/scripts/migration_init.py` — CLI helper que scaffold os 8 arquivos do Time de Migração (paradigm_decision.md, curator_decisions.md, strategy.md, target_*.md, parity_specs.md, parity_tests/) sob `dissects/<contexto>/migration/`.
+
+### Compatibilidade
+
+- 100% compatível com v1.0.0. Sem breaking changes.
+- Skills existentes (22) inalteradas.
+
+### Motivação
+
+Itens 1 e 2 do backlog `PROXIMAS-DECISOES.md` (estimativa original: 4h + 4h = 8h). Entregues como parte da continuação do hardening 2026-09-24.
+
 ## [1.0.0] — 2026-09-24
 
 ### Adicionado
