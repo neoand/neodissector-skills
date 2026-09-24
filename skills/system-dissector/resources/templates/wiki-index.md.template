@@ -1,0 +1,143 @@
+# Wiki Index — <system-name>
+
+<!--
+Phase 3 output of system-dissector. The single entry point of the wiki.
+Keep it short; this file is the table of contents, not the content.
+Each link goes to a real file produced by another template.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. As the wiki TOC, this file links to
+all other dissect outputs — each link target should itself have evidence
+tags. Cross-link integrity + child evidence status both matter.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Wiki snapshot**: `<date the wiki was assembled>` [verified|estimated]
+- **Linked dissects**: `<count>` files, `<n>` `[verified]` / `<n>` `[estimated]`
+
+### Evidence rules
+
+- Every link in the TOC tables should point to a file whose own `## Evidence` section is filled.
+- Phase status table (section 5) MUST reflect real files on disk (cross-link check).
+- If a linked child doc is `[estimated]`-only, escalate to re-dissect before publishing the wiki.
+
+## Como usar este documento
+
+- **Audience**: dev entrando no sistema pela primeira vez, querendo mapa de 30k ft.
+- **Next action**: seguir `## 6. Quick navigation (top 5 links)` para leitura sequencial sugerida.
+- **Quando re-verificar**: sempre que um Phase output novo for commitado, atualizar links e status.
+
+## Summary
+
+<system-name> is a <type> <brief description in 1-2 sentences that captures
+what it does, who uses it, and why it matters>. This wiki captures its
+architecture, the modules worth understanding deeply, and the components
+that can be ported or integrated into other systems.
+
+**Dissect status**: `<in-progress | complete | archived>`
+**Last updated**: `<YYYY-MM-DD>`
+**Maintainer**: `<name or handle>`
+
+---
+
+## 1. Architecture
+
+| Section | File | Purpose |
+|---|---|---|
+| C4 Context | [`c4-context.md`](./c4-context.md) | System boundary, personae, external systems |
+| C4 Container | [`c4-container.md`](./c4-container.md) | Processes, stores, communication |
+| C4 Component | [`c4-component.md`](./c4-component.md) | Internal structure of containers *(if produced)* |
+| Architecture deep-dive | [`../deep-dive/architecture.md`](../deep-dive/architecture.md) | Layered model, process model, multi-X |
+| Data flows | [`../deep-dive/data-flows.md`](../deep-dive/data-flows.md) | End-to-end flows across boundaries |
+| Key structures | [`../deep-dive/key-structures.md`](../deep-dive/key-structures.md) | Central models, indexes, constraints |
+| Module guides | [`modules.md`](./modules.md) | Navigation across modules |
+
+---
+
+## 2. Modules catalog
+
+| Module | Deep-dive file | Tier | Status |
+|---|---|---|---|
+| `<module-name>` | [`../deep-dive/module-<name>.md`](../deep-dive/module-<name>.md) | `T1/T2/T3` | `done / wip / pending` |
+| `<module-name>` | `<link>` | `<tier>` | `<status>` |
+| `<module-name>` | `<link>` | `<tier>` | `<status>` |
+| `<module-name>` | `<link>` | `<tier>` | `<status>` |
+| `<module-name>` | `<link>` | `<tier>` | `<status>` |
+
+---
+
+## 3. Extraction (Phase 4 output)
+
+| Section | File | Purpose |
+|---|---|---|
+| Triage | [`../triagem.md`](../triagem.md) | Phase 1 metadata + scope |
+| Components | [`../extract/components.md`](../extract/components.md) | Components scored for portability |
+| Patterns | [`../extract/patterns.md`](../extract/patterns.md) | Design patterns worth porting |
+| Algorithms | [`../extract/algorithms.md`](../extract/algorithms.md) | Reusable algorithms (crypto, search, ...) |
+
+---
+
+## 4. Integration plan (neodoo-integrate output)
+
+| Section | File | Purpose |
+|---|---|---|
+| Integration plan | [`../integrate/integrate.md`](../integrate/integrate.md) | Step-by-step port / integrate playbook |
+| Effort estimate | [`../integrate/risk-score.md`](../integrate/risk-score.md) | Person-days, dependencies, risks |
+| Architectural deltas | [`../integrate/port-plan/`](../integrate/port-plan/) | Per-component port plans (Tier 1) |
+
+*(Only present when companion run `neodoo-integrate: yes` was declared in triagem.md.)*
+
+---
+
+## 5. Phase status
+
+| Phase | Status | Notes |
+|---|---|---|
+| Phase 1 — Triage | `done / wip / pending` | <one-line> |
+| Phase 2 — Deep Dive | `done / wip / pending` | <one-line> |
+| Phase 3 — Document | `done / wip / pending` | <one-line> |
+| Phase 4 — Extract | `done / wip / pending` | <one-line> |
+| Phase 5 — Integrate | `done / wip / pending` | <one-line> *(only with neodoo-integrate)* |
+
+---
+
+## 6. Quick navigation (top 5 links)
+
+1. **Architecture** — [`c4-context.md`](./c4-context.md) — start with the 30k ft view
+2. **Hottest flows** — [`../deep-dive/data-flows.md`](../deep-dive/data-flows.md)
+3. **Most reusable components** — [`../extract/components.md`](../extract/components.md) Tier 1
+4. **Patterns to learn from** — [`../extract/patterns.md`](../extract/patterns.md)
+5. **Integration plan** — [`../integrate/integrate.md`](../integrate/integrate.md)
+
+---
+
+## 7. Glossary
+
+- **<term>** — <definition>
+- **<term>** — <definition>
+- **<term>** — <definition>
+
+---
+
+## 8. Index checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + wiki snapshot
+- [ ] Every linked TOC entry has a `## Evidence` section in its own file
+- [ ] Phase status table (section 5) matches files on disk
+- [ ] >=50% of linked dissects are `[verified]` (otherwise wiki publish blocked)
+
+### Content
+
+- [ ] Summary paragraph present (1-2 sentences, captures the essence)
+- [ ] All wiki pages linked (no broken links)
+- [ ] Phase status table reflects reality
+- [ ] Top-5 quick-nav covers 80% of reader intent
+- [ ] Glossary captures domain-specific terms introduced by this system
+- [ ] Cross-links to Phase 1 (triagem) and Phase 4 (extract) work
+- [ ] File committed to `dissects/<system>/wiki/index.md`

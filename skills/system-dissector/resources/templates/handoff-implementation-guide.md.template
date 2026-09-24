@@ -1,0 +1,187 @@
+# Handoff — Implementation Guide — <system-name>
+
+<!--
+Phase 5 artifact. The clean-room recipe the downstream team follows
+when implementing Tier 1 components from scratch.
+
+REPRISE HISTÓRICA — Time A / Time B (Compaq/IBM 1981-83): no
+desenvolvimento do IBM BIOS para o PC, a Compaq usou um método
+chamado "Time A / Time B" para demostrar que copyright não protege
+interfaces funcionais. Time A tinha acesso à documentação
+funcional completa do BIOS da IBM; Time B só tinha isso (sem o
+código fonte). Ambos escreveram implementações independentes.
+O resultado foi que a Compaq provou que sua reimplementação não
+era cópia protegida, mas engenharia reversa limpa sobre a
+interface pública. Este template é o descendente direto dessa
+metodologia.
+
+PRINCÍPIO CENTRAL: nunca copiar código. Implementar do zero
+seguindo apenas a especificação. Isso preserva a segurança
+jurídica da reimplementação e força o time a compreender
+verdadeiramente o sistema.
+-->
+
+## Princípio
+
+> Implementar o sistema do zero seguindo a **spec**, nunca o
+> **código fonte**.
+
+### Por quê
+
+1. **Jurídico**: cópia literal infringe copyright mesmo com
+   interface equivalente. Implementação independente a partir da
+   spec é defendável.
+2. **Compreensão**: se você está olhando o código original enquanto
+   escreve, você está anotando — não implementando. A spec força
+   a decidir o que *realmente* importa.
+3. **Adaptação**: o código pode ter detalhes de plataforma (POSIX
+   vs Win32, lock granularity, etc.) que são accidentais, não
+   essenciais. A spec obriga a separar essenciais de acidentais.
+4. **Evolução**: uma reimplementação com base em spec pode divergir
+   com consciência — uma cópia literal diverge por mutação.
+
+### Time A / Time B (método formal)
+
+- **Time A**: tem a spec escrita + testes funcionais.
+  Responsável pela especificação, não pelo código.
+- **Time B**: tem apenas a mesma spec + testes. NÃO tem acesso
+  ao código fonte.
+- Os dois times implementam em paralelo. Diferenças entre
+  implementações são prova de engenharia independente.
+
+Aplica-se aqui: o time que vai implementar **deve fechar a spec
++ testes primeiro, depois implementar com `repo/` indísponível
+(ou deliberadamente não-olhar)**.
+
+## Time A / Time B para cada Tier 1
+
+Para cada componente Tier 1 abaixo, escrever a **spec funcional**
+a partir de `extract/components.md`, `deep-dive/`, e `wiki/`. Após
+aprovar a spec, implementar em paralelo (Time A / Time B ou A só).
+
+### Tier 1 — <component A>
+
+#### Identificação
+
+- **Nome**: <component A>
+- **Tier**: T1 (≥50 pts C1-C6)
+- **Score**: <C1-C6 /60>
+- **Cross-ref**: `extract/components.md#<component-a>`,
+  `deep-dive/<component-a>-analysis.md`,
+  `wiki/modules.md#<component-a>`.
+
+#### Especificação funcional (Time A — escrita primeiro)
+
+O QUE o componente faz, não COMO:
+
+- **Inputs**:
+  - <e.g. HTTP POST /v1/jobs com body JSON {id, payload}>
+  - <e.g. Config file $XDG_CONFIG_HOME/<system>/config.toml>
+- **Outputs**:
+  - <e.g. HTTP 202 com Location header /v1/jobs/{id}>
+  - <e.g. File <workdir>/results.jsonl (uma linha por resultado)>
+- **Invariantes** (limites que SEMPRE valem, ex.: ACID, ordem
+  causal, idempotência):
+  1. <e.g. Job IDs são UUIDv4>
+  2. <e.g. POST /jobs é idempotente sob mesmo Idempotency-Key>
+  3. <e.g. worker pool nunca excede N=128 processos>
+- **Effects colaterais observáveis**:
+  - <e.g. log escrito em stdout em formato JSON>
+  - <e.g. métrica exposta em /metrics>
+- **Erros documentados**:
+  - <e.g. 400 payload inválido, 409 conflict, 429 rate limit>
+
+#### Interfaces (pseudocódigo de tipos)
+
+```python
+# Puro pseudocódigo — escolha a linguagem do downstream
+def handle_job(req: JobRequest) -> JobResponse:
+    ...
+
+def schedule_job(req: JobRequest) -> JobId:
+    ...
+
+def get_job_status(id: JobId) -> JobStatus:
+    ...
+```
+
+Não copie assinaturas do código fonte. A spec *original* é a
+única referência.
+
+#### Casos de teste (transcrição funcional dos testes originais)
+
+Capture o que os testes verificam — não copie os asserts
+literalmente:
+
+| Cenário | Pré-condição | Ação | Pós-condição |
+|---|---|---|---|
+| <e.g.> Create job | id ausente | POST /jobs | 400 |
+| <e.g.> Idempotency | mesmo Idempotency-Key 2x | POST /jobs | mesmas 2xx, sem jobs duplicados |
+| <e.g.> Backpressure | queue cheia | POST /jobs | 503 com Retry-After |
+
+#### Anti-patterns (o que NÃO fazer)
+
+- ❌ Copiar e renomear nomes de funções do código original.
+- ❌ Traduzir linha-a-linha para outra linguagem.
+- ❌ Replicar comentários do código original no código novo (a
+  documentação é sua).
+- ❌ Adoptar convenções de naming accidentais (snake_case em
+  lugar onde camelCase seria idiomático no downstream).
+- ❌ Bindings rígidos para uma versão específica de dependência
+  se a API evoluiu.
+
+#### Checklist de implementação
+
+Antes de declarar o componente implementado:
+
+- [ ] Spec funcional escrita + revisada (Time A).
+- [ ] Implementação feita SEM olhar `repo/` durante a escrita
+  (Time B).
+- [ ] Pseudocódigo de interfaces preenchido.
+- [ ] Todos os casos de teste passam (na sua stack de testes).
+- [ ] Anti-patterns checklist limpo.
+- [ ] Citações `file:line` cruzadas com `extract/components.md`
+  preenchidas.
+- [ ] Invariantes (lista acima) verificadas em runtime.
+
+---
+
+### Tier 1 — <component B>
+
+(copy the structure from Tier 1 — <component A>)
+
+---
+
+## Cross-system patterns worth lifting
+
+Patterns do sistema que **valem ser preservados** na reimplementação.
+Nem todos — só os que aparecem em ≥2 sistemas. Lista detalhada
+em `handoff/patterns-catalog.md`.
+
+- **<pattern 1>**: <one-line why> — ver `patterns-catalog.md#pattern-1`.
+- **<pattern 2>**: <one-line why> — ver `patterns-catalog.md#pattern-2`.
+
+## Cross-references
+
+- `extract/components.md` — scoring C1-C6 e flags de portabilidade
+  por componente.
+- `extract/patterns.md` — patterns extraídos (versão wiki).
+- `extract/algorithms.md` — algoritmos extraíveis como specs.
+- `extract/api.md` — superfície de API (request/response schemas).
+- `handoff/patterns-catalog.md` — patterns com exemplo genérico.
+- `handoff/decisions.md` — ADRs do sistema original (invariantes
+  invioláveis).
+- `handoff/components-priority.md` — ranking Tier 1.
+- `wiki/decisions.md` — fonte canônica dos ADRs.
+- `extract/license-audit.md` — veredito SPDX por componente (não
+  portar componentes com licença incompatível).
+
+## Notes for the implementing team
+
+- **Time pressure**: implemente com `repo/` indísponível (mesmo
+  que esteja lá) para forçar fidelidade à spec.
+- **Tooling**: use `audit-context-building` ou
+  `wiki-researcher` para auditar sua implementação linha-a-linha
+  depois — não para *escrever*, para *revisar*.
+- **Review**: rode `validator.py check <system>` para confirmar
+  que toda a saida ainda satisfaz os quality gates do Phase 4.

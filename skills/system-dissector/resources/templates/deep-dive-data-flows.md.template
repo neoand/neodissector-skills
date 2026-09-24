@@ -1,0 +1,263 @@
+# Data Flows — <system-name>
+
+<!--
+Phase 2 output of system-dissector. End-to-end flows across module
+boundaries. One file per system. Captures the lifecycle of representative
+requests so anyone can reason about latency, error handling, and side
+effects without diving into source.
+
+Filling convention:
+- One flow per section. Keep steps <= 12 per flow; split otherwise.
+- Each step MUST cite file:line. No "it goes to the service".
+- Error paths are NOT optional — capture them explicitly.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Step tables list file:line per row —
+each must be tagged. Otherwise the flow diagram is unverified fiction.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Trace method**: `<e.g. jaeger trace, manual log inspection, mitmproxy>` [verified|estimated]
+- **Flow step coverage**: `<n steps verified>` / `<n total steps>`
+
+### Evidence rules
+
+- Every step in every `### N.2 Steps` table MUST have file:line tagged `[verified]` or `[estimated]`.
+- Error paths (`### N.3 Error paths`) MUST cite a real try/except or middleware (no invented branches).
+- Performance numbers (`### N.4 Performance`) MUST be tagged — benchmarks `[verified]`, intuition `[estimated]`.
+- If 0% of step references are tagged, treat the flow as hypothetical — re-trace.
+
+## Como usar este documento
+
+- **Audience**: dev debugando incidente ou planejando capacity para um novo fluxo.
+- **Next action**: localizar o fluxo relevante em `## 1-5` e seguir step-by-step via `file:line`.
+- **Quando re-verificar**: quando um step quebrar em produção (sentry alert) ou quando o stack de observability mudar.
+
+## 1. Flow: typical read request
+
+<!--
+Replace with the most representative read in your system: "list orders",
+"fetch user profile", etc.
+-->
+
+### 1.1 Trigger
+
+- **Source**: `<client / cron / queue / webhook>`
+- **Endpoint**: `<HTTP path + verb>`
+- **Payload**: `<example payload>`
+- **Auth**: `<required, mechanism>`
+
+### 1.2 Steps
+
+| # | Step | File / function | Boundary | Side effects |
+|---|---|---|---|---|
+| 1 | `<description>` | `<file:line>` | `<client → edge>` | `<none>` |
+| 2 | `<description>` | `<file:line>` | `<edge → app>` | `<none>` |
+| 3 | `<description>` | `<file:line>` | `<app → auth>` | `<audit log>` |
+| 4 | `<description>` | `<file:line>` | `<router → controller>` | `<none>` |
+| 5 | `<description>` | `<file:line>` | `<controller → service>` | `<none>` |
+| 6 | `<description>` | `<file:line>` | `<service → cache>` | `<HIT/MISS>` |
+| 7 | `<description>` | `<file:line>` | `<service → repository>` | `<none>` |
+| 8 | `<description>` | `<file:line>` | `<repository → db>` | `<SQL>` |
+
+### 1.3 Error paths
+
+| Failure | Detected at | Behavior | Reference |
+|---|---|---|---|
+| `<e.g. timeout>` | `<step #>` | `<retry / fail / fallback>` | `<file:line>` |
+| `<e.g. auth invalid>` | `<step #>` | `<401 + audit>` | `<file:line>` |
+| `<e.g. db down>` | `<step #>` | `<503 + alert>` | `<file:line>` |
+
+### 1.4 Performance
+
+- **p50**: `<ms>`
+- **p95**: `<ms>`
+- **p99**: `<ms>`
+- **Bottleneck**: `<identified bottleneck, e.g. db query at step 7>`
+- **Benchmark file**: `<path>`
+
+---
+
+## 2. Flow: authentication
+
+### 2.1 Trigger
+
+- **Source**: `<client>`
+- **Endpoint**: `<login / oauth callback>`
+- **Payload**: `<credentials>`
+- **Auth**: `n/a (this IS auth)`
+
+### 2.2 Steps
+
+| # | Step | File / function | Boundary | Side effects |
+|---|---|---|---|---|
+| 1 | `<receive credentials>` | `<file:line>` | `<edge → app>` | `<rate-limit check>` |
+| 2 | `<validate input>` | `<file:line>` | `<app → schema>` | `<none>` |
+| 3 | `<lookup user>` | `<file:line>` | `<app → db>` | `<SQL>` |
+| 4 | `<verify password hash>` | `<file:line>` | `<app → crypto>` | `<constant-time compare>` |
+| 5 | `<issue token / session>` | `<file:line>` | `<app → token store>` | `<token write, audit>` |
+| 6 | `<return auth response>` | `<file:line>` | `<app → client>` | `<cookie / header set>` |
+
+### 2.3 Error paths
+
+| Failure | Detected at | Behavior | Reference |
+|---|---|---|---|
+| `<wrong password>` | step 4 | `<401 + delay (timing-safe)>` | `<file:line>` |
+| `<user locked>` | step 3 | `<423 + audit>` | `<file:line>` |
+| `<MFA required>` | step 4 | `<challenge response>` | `<file:line>` |
+| `<token store down>` | step 5 | `<503>` | `<file:line>` |
+
+### 2.4 Performance
+
+- **p95**: `<ms>`
+- **Hash cost**: `<bcrypt rounds / argon2 params>`
+- **MFA adds**: `<+ms>`
+
+---
+
+## 3. Flow: typical write / mutation
+
+### 3.1 Trigger
+
+- **Source**: `<client / API>`
+- **Endpoint**: `<path + verb>`
+- **Payload**: `<example payload>`
+- **Auth**: `<required, scope>`
+
+### 3.2 Steps
+
+| # | Step | File / function | Boundary | Side effects |
+|---|---|---|---|---|
+| 1 | `<receive payload>` | `<file:line>` | `<edge → app>` | `<rate-limit>` |
+| 2 | `<validate DTO>` | `<file:line>` | `<app → schema>` | `<none>` |
+| 3 | `<open transaction>` | `<file:line>` | `<app → db>` | `<BEGIN>` |
+| 4 | `<business rule check>` | `<file:line>` | `<service → invariants>` | `<maybe raise>` |
+| 5 | `<repository.create>` | `<file:line>` | `<service → db>` | `<INSERT>` |
+| 6 | `<related updates>` | `<file:line>` | `<service → db>` | `<UPDATE>` |
+| 7 | `<cache.invalidate>` | `<file:line>` | `<service → cache>` | `<DEL>` |
+| 8 | `<outbox.publish>` | `<file:line>` | `<service → outbox>` | `<event row>` |
+| 9 | `<commit>` | `<file:line>` | `<service → db>` | `<COMMIT>` |
+| 10 | `<return response>` | `<file:line>` | `<app → client>` | `<201 + body>` |
+
+### 3.3 Error paths
+
+| Failure | Detected at | Behavior | Reference |
+|---|---|---|---|
+| `<validation fails>` | step 2 | `<400>` | `<file:line>` |
+| `<invariant violated>` | step 4 | `<422 + audit>` | `<file:line>` |
+| `<optimistic lock fails>` | step 5 | `<409 retry-able>` | `<file:line>` |
+| `<commit fails>` | step 9 | `<rollback + 500>` | `<file:line>` |
+| `<cache invalidation fails>` | step 7 | `<compensating job + log>` | `<file:line>` |
+
+### 3.4 Performance
+
+- **p95**: `<ms>`
+- **Tx duration**: `<ms>`
+- **Lock hold time**: `<ms>`
+
+---
+
+## 4. Flow: background job
+
+### 4.1 Trigger
+
+- **Source**: `<cron / queue producer / retry>`
+- **Queue**: `<name>`
+- **Schedule / cadence**: `<* * * * * / on-event>`
+- **Payload**: `<example message>`
+
+### 4.2 Steps
+
+| # | Step | File / function | Boundary | Side effects |
+|---|---|---|---|---|
+| 1 | `<enqueue>` | `<file:line>` | `<producer → broker>` | `<queue write>` |
+| 2 | `<dequeue>` | `<file:line>` | `<worker → broker>` | `<visibility lock>` |
+| 3 | `<deserialize payload>` | `<file:line>` | `<worker → schema>` | `<none>` |
+| 4 | `<process batch / item>` | `<file:line>` | `<worker → domain>` | `<db writes>` |
+| 5 | `<publish derived events>` | `<file:line>` | `<worker → broker>` | `<queue write>` |
+| 6 | `<ack>` | `<file:line>` | `<worker → broker>` | `<message removed>` |
+
+### 4.3 Error paths
+
+| Failure | Detected at | Behavior | Reference |
+|---|---|---|---|
+| `<poison message>` | step 4 | `<dead-letter after N retries>` | `<file:line>` |
+| `<dependency down>` | step 4 | `<visibility timeout retry>` | `<file:line>` |
+| `<partial batch>` | step 4 | `<per-item X, ack what succeeded>` | `<file:line>` |
+| `<worker crash>` | any | `<broker redelivery via visibility>` | `<file:line>` |
+
+### 4.4 Performance
+
+- **Throughput**: `<jobs/sec>`
+- **p95 per job**: `<ms>`
+- **Idempotency**: `<idempotency key strategy>`
+
+---
+
+## 5. Flow: optional — <name>
+
+<!--
+Copy section 1-4 and adapt for additional flows specific to your system.
+Examples:
+- File upload + virus scan + thumbnail
+- Webhook inbound + signature verify + dispatch
+- Multi-step saga across services
+- Report generation + export to S3
+-->
+
+### 5.1 Trigger
+
+- **Source**: `<...>`
+- **Endpoint / queue**: `<...>`
+- **Payload**: `<...>`
+
+### 5.2 Steps
+
+| # | Step | File / function | Boundary | Side effects |
+|---|---|---|---|---|
+| 1 | `<...>` | `<file:line>` | `<...>` | `<...>` |
+
+### 5.3 Error paths
+
+| Failure | Detected at | Behavior | Reference |
+|---|---|---|---|
+| `<...>` | `<...>` | `<...>` | `<file:line>` |
+
+### 5.4 Performance
+
+- **p95**: `<ms>`
+
+---
+
+## 6. Notes
+
+- <observation about cross-flow concerns, e.g. "all flows go through the same auth middleware">
+- <observation>
+- <observation>
+
+---
+
+## 7. Data-flows checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + trace method
+- [ ] Every step in every Steps table tagged `[verified]` or `[estimated]`
+- [ ] Error paths cite real try/except or middleware (no invented branches)
+- [ ] Performance numbers tagged (benchmark `[verified]`, intuition `[estimated]`)
+- [ ] >=50% of step references are `[verified]`
+
+### Coverage
+
+- [ ] At least one read flow documented end-to-end
+- [ ] Auth flow documented
+- [ ] Write flow includes transaction boundary and cache invalidation
+- [ ] Background job flow includes retry / dead-letter strategy
+- [ ] Each flow has error paths, not just happy path
+- [ ] Performance numbers cited from benchmarks (or marked estimated)
+- [ ] Every step has file:line reference
+- [ ] File committed to `dissects/<system>/deep-dive/data-flows.md`

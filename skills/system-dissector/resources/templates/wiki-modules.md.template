@@ -1,0 +1,264 @@
+# Modules Navigation — <system-name>
+
+<!--
+Phase 3 output of system-dissector. A reader-friendly tour of the
+modules / packages / apps. This is NOT a deep-dive — it answers
+"where do I start?" and "what's in the box?".
+
+Filling convention:
+- Use the actual taxonomy the system uses (e.g. "addons" for Odoo,
+  "apps" for Django, "modules" for npm workspaces). Do not invent labels.
+- Tier 1/2/3 mirrors `extract-components.md` — keep them in sync.
+- Inheritance hints MUST point to the real `_inherit` / `extends` mechanism
+  in the codebase, not generic OOP terms.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Module taxonomy + entrypoint claims
+must be backed by real directory listings + grep of source code.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Tree snapshot**: `<e.g. tree -L 2 -d, ls -la, npm ls>` [verified|estimated]
+- **Inheritance probe**: `<e.g. grep -r '_inherit' --include='*.py'>` [verified|estimated]
+
+### Evidence rules
+
+- Top-level layout (section 1) MUST match a real `tree -L 2` or equivalent.
+- Module categorization (section 3) MUST be grounded in the actual repo taxonomy, not invented labels.
+- Inheritance mechanism (section 4.1) MUST be backed by a real syntax example from source.
+- Tier list (section 7) MUST mirror `extract-components.md` exactly (cross-link check).
+- If 0% of references are tagged, the module nav is fictional — re-scan tree.
+
+## Como usar este documento
+
+- **Audience**: dev novo no projeto procurando "onde fica X" ou "como estender Y".
+- **Next action**: usar `## 6. How to find entrypoints` como primeira referência ao debugar.
+- **Quando re-verificar**: quando novo módulo for adicionado ou houver refactor de taxonomia.
+
+## 1. Top-level layout
+
+```text
+<system-name>/
+├── <dir-1>/         # <purpose>
+├── <dir-2>/         # <purpose>
+├── <dir-3>/         # <purpose>
+└── <top-level>      # <purpose>
+```
+
+> For detailed tree up to depth 4, run `<command>` from the repo root.
+
+---
+
+## 2. Standard module anatomy
+
+<!--
+Document what every module in this system looks like. Enables readers
+to navigate ANY module using the same mental model.
+-->
+
+A typical module in `<system-name>` contains:
+
+```text
+<module-name>/
+├── <manifest-file>      # <what it declares (deps, name, version)>
+├── <models-or-domain>/   # <business entities / data classes>
+├── <controllers-or-api>/ # <HTTP handlers / CLI commands>
+├── <views-or-ui>/       # <UI templates / components> *(if any)*
+├── <static-or-assets>/   # <CSS, images, i18n> *(if any)*
+├── <tests>/             # <test files>
+└── <docs>/              # <module-specific docs> *(if any)*
+```
+
+### 2.1 Manifest conventions
+
+| Field | Where | Notes |
+|---|---|---|
+| `<name>` | `<manifest>` | `<one-line>` |
+| `<version>` | `<manifest>` | `<one-line>` |
+| `<depends>` | `<manifest>` | `<semver or path>` |
+| `<extends>` / `_inherit` | `<manifest or code>` | `<one-line>` |
+
+---
+
+## 3. Category → modules map
+
+<!--
+Group modules by their role. Each category section is short — readers
+go to module deep-dives for details.
+-->
+
+### 3.1 Category: `<core>`
+
+- **`<module-a>`** — <one-line>
+- **`<module-b>`** — <one-line>
+- **`<module-c>`** — <one-line>
+
+### 3.2 Category: `<integration>`
+
+- **`<module-a>`** — <one-line>
+- **`<module-b>`** — <one-line>
+
+### 3.3 Category: `<ui>`
+
+- **`<module-a>`** — <one-line>
+
+### 3.4 Category: `<infra>`
+
+- **`<module-a>`** — <one-line>
+- **`<module-b>`** — <one-line>
+
+### 3.5 Category: `<other>`
+
+- **`<module-a>`** — <one-line>
+
+---
+
+## 4. Inheritance & extension
+
+### 4.1 Mechanism
+
+`<system-name>` extends modules via `<mechanism, e.g. _inherit, extends,
+plugin manifest, hook>`:
+
+```text
+<real syntax example from the codebase>
+```
+
+Reference: `<file:line>`
+
+### 4.2 Common patterns
+
+| Pattern | Real example | Effect |
+|---|---|---|
+| `<e.g. override method>` | `<module-a.method-x>` | `<what it does>` |
+| `<e.g. inherit view>` | `<view-id>` | `<what it does>` |
+| `<e.g. subscribe signal>` | `<signal-name>` | `<what it does>` |
+
+### 4.3 Inheritance chains to know
+
+- **`<base>`**: <chain summary> — `<file:line>`
+- **`<base>`**: <chain summary> — `<file:line>`
+
+---
+
+## 5. Dependencies (`depends`)
+
+### 5.1 How `depends` is declared
+
+```text<real-syntax>
+<real syntax example>
+```
+
+### 5.2 Critical dependency chains
+
+```text
+<module-a>
+  └─→ <module-b>
+        └─→ <module-c>
+              └─→ <module-d>
+```
+
+- **Chain 1**: <purpose> — root: `<module>`
+- **Chain 2**: <purpose> — root: `<module>`
+
+### 5.3 Optional dependencies
+
+| Module | Optional dep | Effect when missing |
+|---|---|---|
+| `<module>` | `<lib>` | `<degraded behavior>` |
+| `<module>` | `<lib>` | `<degraded behavior>` |
+
+---
+
+## 6. How to find entrypoints
+
+| Goal | Where to look |
+|---|---|
+| HTTP route definition | `<path/pattern>` |
+| CLI command | `<path/pattern>` |
+| Background job handler | `<path/pattern>` |
+| Webhook receiver | `<path/pattern>` |
+| Database migration | `<path/pattern>` |
+| Plugin / extension hook | `<path/pattern>` |
+| Config schema | `<path/pattern>` |
+
+### 6.1 Quick recipes
+
+- **Find every entry point that matches `<pattern>`**:
+  ```bash
+  <real command>
+  ```
+- **List all routes**: `<real command>`
+- **List all cron jobs**: `<real command>`
+
+---
+
+## 7. Module tiers
+
+<!--
+Tiers mirror `extract-components.md`. Update both files together.
+-->
+
+### 7.1 Tier 1 — port immediately (score ≥ 50/60)
+
+- **`<module-a>`** — <one-line why>
+- **`<module-b>`** — <one-line why>
+- **`<module-c>`** — <one-line why>
+
+### 7.2 Tier 2 — evaluate case by case (score 40-49)
+
+- **`<module-a>`** — <one-line why>
+- **`<module-b>`** — <one-line why>
+
+### 7.3 Tier 3 — do not port (score < 40)
+
+- **`<module-a>`** — <one-line why>
+- **`<module-b>`** — <one-line why>
+- **`<module-c>`** — <one-line why>
+
+---
+
+## 8. Reading order for new contributors
+
+1. **<suggested-first-read>** — <why>
+2. **<suggested-second-read>** — <why>
+3. **<suggested-third-read>** — <why>
+4. **<suggested-fourth-read>** — <why>
+5. **<suggested-fifth-read>** — <why>
+
+---
+
+## 9. Notes
+
+- <navigation tip — e.g. "module Y is hidden under Z if you don't know to look">
+- <navigation tip>
+- <navigation tip>
+
+---
+
+## 10. Modules navigation checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + tree/inheritance probe
+- [ ] Top-level layout matches a real `tree -L 2` or equivalent
+- [ ] Module categorization grounded in actual repo taxonomy (no invented labels)
+- [ ] Inheritance mechanism backed by real syntax example from source
+- [ ] Tier list mirrors `extract-components.md` exactly
+- [ ] >=50% of references are `[verified]`
+
+### Coverage
+
+- [ ] Top-level tree captured (depth 2)
+- [ ] Standard module anatomy documented with real file references
+- [ ] Categories reflect the codebase, not an external taxonomy
+- [ ] Inheritance mechanism explained with real code snippet
+- [ ] Critical dependency chains drawn
+- [ ] Entrypoint lookup commands are runnable and current
+- [ ] Tier lists match `extract-components.md` exactly
+- [ ] File committed to `dissects/<system>/wiki/modules.md`
+- [ ] Cross-link from `wiki/index.md` works

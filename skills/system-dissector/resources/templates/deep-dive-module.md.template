@@ -1,0 +1,344 @@
+# Module Deep-Dive — <module-name>
+
+<!--
+Phase 2 output of system-dissector. ONE module per file. Copy this file
+to `module-<n>.md` for each candidate listed in
+triagem.md.
+
+Filling convention:
+- Module scope MUST be explicit ("everything under <dir> excluding tests").
+- Always quote the file:line reference, never paraphrase.
+- "API surface" means the public surface other modules depend on, not
+  every method (private helpers go in Notes).
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. The DEV team will copy methods/snippets
+from this doc into target host code. Each `file:line` MUST be tagged.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Module path confirmed**: `<path/to/module>` via `<e.g. find . -type d -name 'module'>` [verified|estimated]
+- **File:line count**: `<n verified>` / `<n total>`
+
+### Evidence rules
+
+- Every `file:line` reference in the body MUST be tagged `[verified]` or `[estimated]`.
+- DDL snippets in section 8 MUST be copied verbatim from a migration file (cite source).
+- Code excerpts in section 7 (API surface) MUST be re-read in clone before commit.
+- If 0% of references are tagged, the output has high hallucination risk — DEV must re-dissect.
+
+## Como usar este documento
+
+- **Audience**: dev que vai portar/extrair este módulo para outro host.
+- **Next action**: ler `## 7. Public API surface` + `## 8. Database schema` antes de iniciar o port.
+- **Quando re-verificar**: quando o módulo alvo tiver nova release, ou quando houver mudança breaking no schema (seção 8).
+
+## 1. Overview
+
+| Field | Value |
+|---|---|
+| **Module path** | `<path/to/module>` |
+| **Purpose** | `<one-sentence>` |
+| **Owner / author** | `<org or github-handle>` |
+| **Lines of code** | `<count>` |
+| **Files** | `<count>` |
+| **Complexity** | `low` \| `medium` \| `high` \| `very-high` |
+| **Coupling (afferent)** | `<# modules depending on this>` |
+| **Coupling (efferent)** | `<# modules this depends on>` |
+| **Tier (from extract-components)** | `T1` \| `T2` \| `T3` |
+
+### 1.1 Why it was selected
+
+<one paragraph — re-paste from triagem.md and expand with what you expect to learn>
+
+### 1.2 Module boundary
+
+<!--
+Define the exact files included and excluded. This prevents scope creep.
+-->
+- **Included**: `<glob pattern, e.g. module/**/*.py excluding tests>`
+- **Excluded**: `<list, e.g. tests/, fixtures/, examples/>`
+
+---
+
+## 2. Domain models
+
+| Model | Storage | Purpose | LOC | Key fields |
+|---|---|---|---|---|
+| `<ModelName>` | `<table or collection>` | `<one-line>` | `<n>` | `<field1, field2, ...>` |
+| `<ModelName>` | `<storage>` | `<purpose>` | `<n>` | `<fields>` |
+| `<ModelName>` | `<storage>` | `<purpose>` | `<n>` | `<fields>` |
+
+### 2.1 Inherits from
+
+| Model | Parent | Inheritance kind | Reference |
+|---|---|---|---|
+| `<Child>` | `<Parent>` | `single-table` / `multi-table` / `concrete` / `mixin` | `<file:line>` |
+| `<Child>` | `<Mixin>` | `mixin / abstract` | `<file:line>` |
+
+### 2.2 Notable field definitions
+
+- `<field-name>`: <type, validation, why it matters>
+- `<field-name>`: <notes>
+- `<field-name>`: <notes>
+
+---
+
+## 3. Controllers / handlers
+
+| Handler | Route | Method | Auth | Purpose | Reference |
+|---|---|---|---|---|---|
+| `<HandlerName>` | `<path>` | `<verb>` | `<required role>` | `<one-line>` | `<file:line>` |
+| `<HandlerName>` | `<path>` | `<verb>` | `<role>` | `<purpose>` | `<file:line>` |
+| `<HandlerName>` | `<path>` | `<verb>` | `<role>` | `<purpose>` | `<file:line>` |
+
+### 3.1 Notable handler patterns
+
+- <pattern 1 — e.g. "uses etag-based optimistic concurrency">
+- <pattern 2>
+- <pattern 3>
+
+---
+
+## 4. Views / serializers
+
+| View | Purpose | Format | Notable |
+|---|---|---|---|
+| `<View>` | `<purpose>` | `JSON` / `XML` / `HTML` | <notes> |
+| `<View>` | `<purpose>` | `<format>` | <notes> |
+
+---
+
+## 5. Dependencies
+
+### 5.1 Internal modules
+
+| Depends on | Direction | Why | Reference |
+|---|---|---|---|
+| `<module>` | `<in/out>` | `<one-line>` | `<file:line>` |
+| `<module>` | `<in/out>` | `<one-line>` | `<file:line>` |
+
+### 5.2 External libraries
+
+| Library | Version | Used for | Reference |
+|---|---|---|---|
+| `<lib>` | `<v>` | `<purpose>` | `<file:line>` |
+| `<lib>` | `<v>` | `<purpose>` | `<file:line>` |
+
+### 5.3 Optional dependencies (loaded only if present)
+
+- `<lib>` — feature flag
+- `<lib>` — feature flag
+
+---
+
+## 6. Extendable points (inheritance / plugins)
+
+<!--
+Critical for portability: how do consumers extend this module without
+forking? Capture inheritance hooks, hook registries, signals, lifecycle
+callbacks, etc.
+-->
+
+| Hook | Signature | Default behavior | Used by |
+|---|---|---|---|
+| `<hook>` | `<(self, ...) -> None>` | `<description>` | `<module>` |
+| `<hook>` | `<signature>` | `<description>` | `<module>` |
+| `<hook>` | `<signature>` | `<description>` | `<module>` |
+
+### 6.1 Override strategy
+
+- **Single inheritance** from `<Base>`: <where documented>
+- **Mixins**: <list>
+- **Plugin registration**: <file:line>
+
+---
+
+## 7. Public API surface
+
+<!--
+List methods other modules rely on. Excludes private helpers (`_prefixed`).
+Sort by call frequency (high → low) when known.
+-->
+
+| Method | Signature | Purpose | Called by | Reference |
+|---|---|---|---|---|
+| `<method>` | `<(self, x: int) -> Result>` | `<purpose>` | `<count>` callers | `<file:line>` |
+| `<method>` | `<signature>` | `<purpose>` | `<count>` | `<file:line>` |
+| `<method>` | `<signature>` | `<purpose>` | `<count>` | `<file:line>` |
+| `<method>` | `<signature>` | `<purpose>` | `<count>` | `<file:line>` |
+| `<method>` | `<signature>` | `<purpose>` | `<count>` | `<file:line>` |
+
+### 7.1 Stability contract
+
+- <promise — e.g. "arguments stable since v2", "BC guarantee">
+- <promise>
+- <promise>
+
+---
+
+## 8. Database schema
+
+<!--
+Capture the CREATE TABLE equivalent for this module's tables. Include
+indexes and constraints. Output is reference for porting.
+-->
+
+### 8.1 `<table-name>`
+
+```sql
+CREATE TABLE <table-name> (
+    id              BIGSERIAL PRIMARY KEY,
+    <column>        <type> <constraints>,
+    <column>        <type> <constraints>,
+    ...
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX <idx-name> ON <table-name> (<col>);
+CREATE UNIQUE INDEX <idx-name> ON <table-name> (<col>);
+```
+
+### 8.2 `<table-name>`
+
+```sql
+CREATE TABLE <table-name> (
+    ...
+);
+```
+
+### 8.3 Migrations
+
+| Migration | Direction | Notes | File |
+|---|---|---|---|
+| `<name>` | `up` | <notes> | `<path>` |
+| `<name>` | `down` | <notes> | `<path>` |
+
+---
+
+## 9. Performance characteristics
+
+| Concern | Answer | Reference |
+|---|---|---|
+| **Typical query count per request** | `<n>` | `<benchmark>` |
+| **Known N+1 hotspots** | `<list>` | `<file:line>` |
+| **Caching** | `<in-memory / redis / none>` | `<file>` |
+| **Lazy loading** | `<yes / no>` | `<file>` |
+| **Bulk endpoints** | `<yes / no>` | `<file>` |
+| **Index coverage** | `<% of EXPLAINs using index>` | `<sample EXPLAIN>` |
+| **p95 latency (read)** | `<ms>` | `<benchmark>` |
+| **p95 latency (write)** | `<ms>` | `<benchmark>` |
+| **Throughput ceiling** | `<rps or tps>` | `<benchmark>` |
+
+---
+
+## 10. Security
+
+| Concern | Finding | Severity | Reference |
+|---|---|---|---|
+| **Auth required** | `<yes / no / partial>` | `<H/M/L/none>` | `<file>` |
+| **Authz checks** | `<RBAC / ABAC / ACL / none>` | `<H/M/L/none>` | `<file>` |
+| **Input validation** | `<library / manual / none>` | `<H/M/L/none>` | `<file>` |
+| **CSRF protection** | `<yes / no / n/a>` | `<H/M/L/none>` | `<file>` |
+| **Rate limiting** | `<per-IP / per-user / none>` | `<H/M/L/none>` | `<file>` |
+| **Audit logging** | `<yes / no / partial>` | `<H/M/L/none>` | `<file>` |
+| **PII handling** | `<encrypted at rest / in transit / none>` | `<H/M/L/none>` | `<file>` |
+| **Known CVEs in this module** | `<count>` | `<H/M/L/none>` | `<scanner>` |
+
+### 10.1 Top concerns
+
+1. <concern with one-sentence mitigation>
+2. <concern>
+3. <concern>
+
+---
+
+## 11. Portability assessment
+
+<!--
+How hard is it to lift this module into a different host application?
+The score here informs `extract-components.md`.
+-->
+
+| Dimension | Score (0-10) | Notes |
+|---|---|---|
+| **Self-containment** | `<0-10>` | <one-line> |
+| **External API surface** | `<0-10>` | <one-line> |
+| **Schema portability** | `<0-10>` | <one-line> |
+| **Coupling to host** | `<0-10>` | <one-line> (higher = easier) |
+| **Documentation quality** | `<0-10>` | <one-line> |
+| **Test coverage** | `<0-10>` | <one-line> |
+| **TOTAL (sum)** | `<0-60>` | See `extract-components.md` rubric |
+
+### 11.1 Blockers to porting
+
+- <blocker>
+- <blocker>
+
+### 11.2 Effort estimate
+
+- **LOC to port**: `<count>`
+- **Person-days**: `<estimate>`
+- **Risk**: `low` \| `medium` \| `high`
+
+---
+
+## 12. Notes
+
+- <free-form note about quirks, surprises, undocumented behavior>
+- <note>
+- <note>
+
+---
+
+## 13. Module deep-dive checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + module path verification
+- [ ] Every `file:line` reference in body tagged `[verified]` or `[estimated]`
+- [ ] Public API surface (section 7) re-read from clone before commit
+- [ ] DDL snippets (section 8) verified against a real migration file
+- [ ] >=50% of references are `[verified]` (otherwise escalate for re-dissect)
+
+### Scope
+
+- [ ] Module path and boundary unambiguous
+- [ ] Excluded paths listed
+- [ ] Why-this-module justified
+
+### Models
+
+- [ ] All models listed with storage and purpose
+- [ ] Inheritance tree captured
+- [ ] Notable fields called out
+
+### Surface
+
+- [ ] Controllers / handlers listed with auth requirements
+- [ ] Views / serializers listed
+- [ ] Internal & external deps enumerated
+- [ ] Extendable hooks documented
+- [ ] Public API surface stable subset identified
+
+### Schema
+
+- [ ] Tables captured (DDL with indexes)
+- [ ] Migration files referenced
+
+### Quality
+
+- [ ] Performance numbers cited from real benchmarks (or marked estimated)
+- [ ] Security concerns scored with file:line reference
+- [ ] Portability scored using extract-components rubric
+
+### Hand-off
+
+- [ ] File committed to `dissects/<system>/deep-dive/module-<name>.md`
+- [ ] Cross-link from `wiki/modules.md`
+- [ ] Tier label matches `extract-components.md`

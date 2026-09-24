@@ -1,0 +1,374 @@
+# Architecture Deep-Dive — <system-name>
+
+<!--
+Phase 2 output of system-dissector. Macro-level view: stack, layers,
+process model, request lifecycle, transactional model, cache, multi-X
+concerns. One file per system. Module-level detail lives in
+`module-<n>.md`.
+
+Filling convention:
+- Drop in real commands / file references; never paste code from memory.
+- Mermaid diagrams MUST be valid C4 syntax; render locally before commit.
+- Quantitative claims (latency, throughput) MUST come from real benchmarks,
+  otherwise mark as "estimated".
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Mark each `file:line` reference in
+the body with one of:
+- [verified] — path confirmed via `find`, `ls`, `git ls-files`, or read in clone
+- [estimated] — inferred from naming patterns, not validated against source
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Commands run to verify**: `<e.g. cloc ., tree -L 2, ps aux | grep -i worker>` [verified|estimated]
+
+### Evidence rules
+
+- Every `file:line` reference in the body MUST be tagged `[verified]` or `[estimated]`.
+- Mermaid container names and arrows MUST correspond to real processes observed via `ps`, `docker ps`, or `kubectl get pods`.
+- If 0% of references are tagged, the output has high hallucination risk — DEV must re-dissect.
+
+## Como usar este documento
+
+- **Audience**: arquiteto/tech-lead decidindo viabilidade de port/integrate.
+- **Next action**: ler `## 3. C4 — Container view` + `## 6. Request → response data flow` antes de estimar esforço.
+- **Quando re-verificar**: quando o sistema alvo trocar stack (ex: migrar de gunicorn para uvicorn).
+
+## 1. Stack overview
+
+| Layer | Technology | Version | Notes |
+|---|---|---|---|
+| **OS / runtime** | `<ubuntu 24.04, alpine 3.20, jdk 21, ...>` | `<v>` | <one-line> |
+| **Language(s)** | `<Python 3.12, TypeScript 5.6, Rust 1.82>` | `<v>` | <one-line> |
+| **HTTP / RPC** | `<gunicorn, nginx, envoy, caddy>` | `<v>` | <one-line> |
+| **Application framework** | `<FastAPI, Django, Next.js, Actix>` | `<v>` | <one-line> |
+| **ORM / data access** | `<SQLAlchemy 2.0, Prisma 5, Diesel>` | `<v>` | <one-line> |
+| **Database** | `<PostgreSQL 17, MongoDB 7, Redis 7>` | `<v>` | <one-line> |
+| **Cache** | `<Redis, memcached, in-process>` | `<v>` | <one-line> |
+| **Queue / async** | `<Celery, BullMQ, RabbitMQ, Kafka>` | `<v>` | <one-line> |
+| **Search** | `<OpenSearch, Meilisearch, Typesense>` | `<v>` | <one-line> |
+| **Observability** | `<OpenTelemetry, Prometheus, Sentry>` | `<v>` | <one-line> |
+| **Auth** | `<OAuth2 / OIDC, JWT, sessions>` | `<v>` | <one-line> |
+| **Packaging** | `<docker, nix, deb, pkg>` | `<v>` | <one-line> |
+
+---
+
+## 2. Layered model
+
+<!--
+List the layers from request ingress to data persistence. One line per
+layer + which files implement it. Helps readers find entrypoints fast.
+-->
+
+### L0 — Edge / ingress
+
+- **Component**: `<nginx, envoy, caddy, cloud LB>`
+- **Responsibility**: TLS termination, rate limiting, static asset serving
+- **Config**: `<path/to/nginx.conf:line>`
+
+### L1 — Application server
+
+- **Component**: `<gunicorn, uvicorn, node, jvm>`
+- **Workers**: `<count, model: sync/async/gevent>`
+- **Process model**: `<N workers per CPU, threads, ...>`
+
+### L2 — HTTP framework / routing
+
+- **Component**: `<FastAPI/Next.js/...>`
+- **Router**: `<path/to/router>`
+- **Auth middleware**: `<path/to/middleware>`
+
+### L3 — Service layer
+
+- **Component**: `<business logic, use-cases, application services>`
+- **Convention**: `<thin controllers, fat services / vice-versa>`
+- **Entry pattern**: `<commands / queries / sagas / ...>`
+
+### L4 — Data access
+
+- **Component**: `<ORM + repository / DAO pattern>`
+- **Convention**: `<raw SQL only in <dir>, ORM elsewhere>`
+
+### L5 — Persistence
+
+- **Component**: `<postgres / sqlite / file>`
+- **Migrations tool**: `<alembic, sqitch, knex, flyway>`
+- **Seed strategy**: `<factory_boy, fixtures, none>`
+
+### Frontend (if any)
+
+- **Framework**: `<react, vue, svelte>`
+- **Build**: `<vite, webpack, turbopack>`
+- **Bundle strategy**: `<SPA, SSR, RSC, islands>`
+
+---
+
+## 3. C4 — Container view
+
+<!--
+Use C4Container syntax. Keep the diagram <= 12 nodes; split into multiple
+diagrams if larger. The placeholder below is intentionally minimal — fill it.
+-->
+
+```mermaid
+C4Container
+    title Container diagram for <system-name>
+
+    Person(user, "End user", "Uses the system via browser or mobile")
+
+    System_Boundary(b1, "<system-name>") {
+        Container(web, "Web SPA", "<framework>", "Browser UI")
+        Container(api, "API server", "<framework>", "REST/JSON endpoints")
+        Container(worker, "Background worker", "<queue client>", "Async jobs")
+        ContainerDb(db, "Primary DB", "<postgres>", "Source of truth")
+        ContainerDb(cache, "Cache", "<redis>", "Hot data")
+    }
+
+    System_Ext(extA, "External service A", "What it does")
+    System_Ext(extB, "External service B", "What it does")
+
+    Rel(user, web, "Uses", "HTTPS")
+    Rel(web, api, "Calls", "HTTPS/JSON")
+    Rel(api, db, "Reads/writes", "TCP/SQL")
+    Rel(api, cache, "Gets/sets", "TCP")
+    Rel(api, extA, "Calls", "HTTPS")
+    Rel(worker, extB, "Polls", "HTTPS")
+```
+
+### 3.1 Container notes
+
+- **web**: <scale, deployment unit, build artifacts>
+- **api**: <workers count, restart policy, shutdown grace>
+- **worker**: <prefetch, concurrency, ack semantics>
+- **db**: <connection pool size, max connections, replicas>
+- **cache**: <eviction policy, TTL strategy, namespace>
+
+---
+
+## 4. Process model
+
+| Concern | Answer | Reference |
+|---|---|---|
+| **Single-process or multi?** | `<answer>` | `<file>` |
+| **Workers** | `<count, dyn, sync>` | `<config>` |
+| **Pre-fork model?** | `<yes/no>` | `<file>` |
+| **Threading** | `<gthread, asyncio, hybrid>` | `<file>` |
+| **Signal handling** | `<SIGTERM graceful, SIGHUP reload>` | `<file>` |
+| **Hot reload (dev)** | `<watchdog, nodemon, air>` | `<file>` |
+| **Crash recovery** | `<queue redelivery, idempotency keys>` | `<file>` |
+| **Zero-downtime deploy** | `<rolling, blue/green, canary>` | `<file>` |
+
+---
+
+## 5. Module loading / plugin model
+
+| Concern | Answer |
+|---|---|
+| **Loading strategy** | `<eager, lazy, dynamic>` |
+| **Discovery** | `<entry_points, manifest scan, file glob>` |
+| **Order of registration** | `<priority field, alphabetical, dependency graph>` |
+| **Hot-reload of plugins** | `<yes/no>` |
+| **Sandbox** | `<same process / subprocess / wasm>` |
+| **Reference implementation** | `<file:line>` |
+
+---
+
+## 6. Request → response data flow
+
+<!--
+One canonical flow: a typical read request, then a typical write request.
+Each step lists the file/function and what crosses the boundary.
+-->
+
+### 6.1 Read flow (typical)
+
+```text
+client
+  └── HTTPS request ──▶ edge (TLS, rate-limit)
+        └── HTTP ──▶ API process (gunicorn worker)
+              └── router match ──▶ controller (FastAPI route)
+                    └── auth check ──▶ middleware/guard
+                          └── service.use_case (business logic)
+                                └── repository.find (ORM)
+                                      └── SQL ──▶ database
+        ◀── response (JSON, possibly cached) ──┘
+```
+
+| Step | File / function | Boundary crossing |
+|---|---|---|
+| 1 | `<edge.conf:line>` | TLS, rate limit |
+| 2 | `<router.match>` | URL → handler |
+| 3 | `<auth.middleware>` | token/session verify |
+| 4 | `<controller.handler>` | request validation |
+| 5 | `<service.use_case>` | business rules |
+| 6 | `<repository.find>` | ORM call |
+| 7 | `<db.execute>` | SQL over wire |
+
+### 6.2 Write flow (typical)
+
+```text
+client
+  └── write request ──▶ controller
+        └── validate (pydantic / zod / ...)
+              └── service (business rule check + transaction begin)
+                    ├── repository.create (INSERT)
+                    ├── repository.update (UPDATE)
+                    ├── cache.invalidate
+                    ├── event.publish (outbox pattern?)
+                    └── transaction.commit
+        ◀── 201 Created + new resource ──┘
+```
+
+| Step | File / function | Notes |
+|---|---|---|
+| 1 | `<controller>` | DTO validation |
+| 2 | `<service>` | Transaction boundary |
+| 3 | `<repository>` | SQL execution |
+| 4 | `<cache>` | Invalidation strategy |
+| 5 | `<event bus>` | Sync/async, retry |
+
+---
+
+## 7. Transactional model
+
+| Concern | Answer | Reference |
+|---|---|---|
+| **Default isolation level** | `<read committed / repeatable read / serializable>` | `<db config>` |
+| **ORM session lifecycle** | `<request-scoped / explicit>` | `<file>` |
+| **Savepoint usage** | `<yes / no>` | `<file>` |
+| **Distributed tx** | `<2PC / saga / outbox / none>` | `<file>` |
+| **Idempotency keys** | `<yes / no / partial>` | `<file>` |
+| **Lock strategy** | `<optimistic / pessimistic / advisory>` | `<file>` |
+| **Deadlock handling** | `<retry with jitter / alert / manual>` | `<file>` |
+
+---
+
+## 8. Cache invalidation strategy
+
+| Cache | Invalidation trigger | Strategy | Stale window |
+|---|---|---|---|
+| `<cache-name>` | `<event / TTL / write-through>` | `<invalidate / refresh / version>` | `<seconds>` |
+| `<cache-name>` | `<trigger>` | `<strategy>` | `<seconds>` |
+| `<cache-name>` | `<trigger>` | `<strategy>` | `<seconds>` |
+
+### 8.1 Common pitfalls observed
+
+- <pitfall 1 — cache-aside race>
+- <pitfall 2 — thundering herd>
+- <pitfall 3 — silent schema drift>
+
+---
+
+## 9. Multi-X concerns
+
+### 9.1 Multi-tenancy
+
+- **Strategy**: `<schema-per-tenant / row-level / db-per-tenant / none>`
+- **Tenant resolution**: `<header / subdomain / JWT claim / path>`
+- **Cross-tenant safeguards**: `<middleware / row-level security / unit tests>`
+- **Reference**: `<file:line>`
+
+### 9.2 Multi-currency
+
+- **Strategy**: `<single base currency + fx table / per-currency balances>`
+- **FX rate source**: `<ECB / openexchangerates / manual>`
+- **Rounding**: `<banker's rounding / half-up>`
+- **Reference**: `<file>`
+
+### 9.3 Multi-language / i18n
+
+- **Strategy**: `<gettext / message catalogs / runtime lookup>`
+- **Locales supported**: `<list>`
+- **Pluralization**: `<ICU MessageFormat / simple>`
+- **Reference**: `<file>`
+
+### 9.4 Multi-region / data residency
+
+- **Strategy**: `<region pinning / replication / none>`
+- **Compliance drivers**: `<GDPR / LGPD / HIPAA>`
+- **Reference**: `<file>`
+
+---
+
+## 10. ORM / data-access internals
+
+<!--
+Document non-obvious ORM usage. This is high-yield for porting.
+-->
+
+| Topic | Detail | Reference |
+|---|---|---|
+| **Bulk operations** | `<bulk_create, bulk_update, COPY>` | `<file>` |
+| **Custom types** | `<JSONB, range, enum>` | `<file>` |
+| **Computed columns** | `<Generated / Pydantic @computed_property>` | `<file>` |
+| **Soft delete** | `<deleted_at column / override unlink>` | `<file>` |
+| **Audit trail** | `<trigger / mixin / event>` | `<file>` |
+| **Versioning** | `<paper_trail / hibernate envers / none>` | `<file>` |
+| **Eager-loading pitfalls** | `<N+1 hotspots / where to use selectinload>` | `<file>` |
+| **Raw SQL escape hatch** | `<when allowed>` | `<file>` |
+
+---
+
+## 11. Notes
+
+- <architectural quirk worth remembering>
+- <architectural quirk>
+- <architectural quirk>
+
+---
+
+## 12. Phase 2 architecture checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + verification commands
+- [ ] Every `file:line` reference in body tagged `[verified]` or `[estimated]`
+- [ ] C4 diagram node names confirmed against real running processes (`ps`, `docker ps`, `kubectl get pods`)
+- [ ] >=50% of references are `[verified]` (otherwise escalate for re-dissect)
+
+### Stack
+
+- [ ] All layer rows in section 1 filled with real versions
+- [ ] Each version verified against lockfile or installed binary
+- [ ] License implications of each dep noted if relevant
+
+### Layered model
+
+- [ ] Each layer has at least one file reference
+- [ ] Auth middleware path identified
+- [ ] ORM boundaries documented
+- [ ] Frontend (if any) covered separately
+
+### C4
+
+- [ ] Diagram renders cleanly in mermaid live editor
+- [ ] All containers have one-line responsibility
+- [ ] External systems labelled with their real purpose
+- [ ] Communication protocols explicit (HTTPS/TCP/etc.)
+
+### Flows
+
+- [ ] Read flow steps traceable end-to-end (file:line per step)
+- [ ] Write flow includes transaction boundary and cache invalidation
+- [ ] Auth path documented in at least one flow
+
+### Transactional model
+
+- [ ] Isolation level documented
+- [ ] Idempotency strategy stated
+- [ ] Distributed-tx strategy stated (or "none" with reason)
+
+### Multi-X
+
+- [ ] Multi-tenancy strategy and safeguards documented
+- [ ] Currency / i18n / region only filled if applicable (mark n/a otherwise)
+
+### Hand-off
+
+- [ ] File committed to `dissects/<system>/deep-dive/architecture.md`
+- [ ] Cross-link from `wiki/index.md`
+- [ ] Module-level files scheduled for next iteration

@@ -1,0 +1,195 @@
+# Extract — Algorithms — <system-name>
+
+<!--
+Phase 4 output of system-dissector. Reusable computational kernels found
+in the system. Focus on the math/algorithm itself, not the surrounding
+codebase. If the algorithm is a known reference (SHA-256, A*, RLE), name
+it and link the spec; otherwise document the novel bits carefully.
+
+Filling convention:
+- Complexity claims MUST be Big-O + the constants that matter (e.g.
+  "O(n log n) but n <= 1e6 in practice, so ~50ms").
+- Always state the portability target (any language, Python-only, etc.).
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Algorithm implementations get ported to
+production systems. Wrong complexity claims or buggy snippets = silent
+production failure. Crypto section is especially critical — see warnings.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Complexity validation**: `<e.g. cProfile, hyperfine, analytical proof>` [verified|estimated]
+- **Property tests**: `<e.g. hypothesis, property-based test suite>` [verified|estimated]
+
+### Evidence rules
+
+- Implementation blocks in `### 2.x` MUST be verbatim from cited `file:line` (no pseudo-code).
+- Complexity claims MUST cite either an empirical benchmark OR analytical proof.
+- "Tests / properties" MUST be backed by a real test (not invented properties).
+- Crypto section (3) MUST include independent audit reference for any hash/signature/KDF.
+- If 0% of references are tagged, the catalog is editorial — re-verify against source + benchmarks.
+
+## Como usar este documento
+
+- **Audience**: dev procurando algoritmo pronto (crypto, search, sort, parsing) para reusar.
+- **Next action**: revisar `## 3. Crypto & hashing` antes de QUALQUER decisão de segurança; rodar testes de propriedade do `### 2.x` antes de portar.
+- **Quando re-verificar**: quando houver CVE em primitive cripto, ou quando benchmark mostrar regressão.
+
+## 1. Algorithm catalog
+
+| # | Algorithm | Domain | Complexity | Quality | Portability |
+|---|---|---|---|---|---|
+| 1 | `<algo>` | `<crypto / search / sort / ml / compression / parsing / graph / numeric>` | `<O(?)>` | `H/M/L` | `<target languages>` |
+| 2 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 3 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 4 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 5 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 6 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 7 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+| 8 | `<algo>` | `<domain>` | `<O(?)>` | `<q>` | `<target>` |
+
+---
+
+## 2. Algorithms (detailed)
+
+### 2.1 `<algorithm-name>`
+
+- **Domain**: `<domain>`
+- **Standard reference**: `<RFC / paper / textbook / original>` — `<citation>`
+- **Where implemented**: `<file:line>`
+- **Language of origin**: `<python / rust / c / ...>`
+- **Quality**: `H / M / L`
+- **Portability**: `<languages it can run in>`
+
+#### Problem statement
+
+<2-4 sentences: what it solves, what constraints the original solver worked
+under, why a custom implementation was needed instead of an off-the-shelf
+library.>
+
+#### Complexity
+
+- **Time**: `O(...)` — with constants, e.g. "≤ 2n + 5 for n in input range"
+- **Space**: `O(...)`
+- **Best case**: `<...>`
+- **Worst case**: `<...>`
+- **Inputs validated against**: `<range, e.g. n <= 1e6, strings <= 4KB>`
+
+#### Implementation
+
+```<lang>
+<real code, 10-30 lines, from <file:line>>
+```
+
+#### Tests / properties
+
+- <property — e.g. "idempotent: f(f(x)) == f(x)">
+- <property — e.g. "deterministic: same input → same output">
+- <property — e.g. "monotonic in x">
+
+#### Known weaknesses
+
+- <weakness — e.g. "collisions at birthday boundary when |input| > 2^32">
+- <weakness>
+
+---
+
+### 2.2 `<algorithm-name>`
+
+(copy the structure from 2.1)
+
+---
+
+### 2.3 `<algorithm-name>`
+
+(copy the structure from 2.1)
+
+---
+
+### 2.4 `<algorithm-name>`
+
+(copy the structure from 2.1)
+
+---
+
+### 2.5 `<algorithm-name>`
+
+(copy the structure from 2.1)
+
+---
+
+### 2.6 `<algorithm-name>`
+
+(copy the structure from 2.1)
+
+---
+
+### 2.7 `<algorithm-name>` *(optional)*
+
+(copy the structure from 2.1)
+
+---
+
+### 2.8 `<algorithm-name>` *(optional)*
+
+(copy the structure from 2.1)
+
+---
+
+## 3. Crypto & hashing specifically
+
+<!--
+Crypto algorithms deserve their own section because of regulatory and
+safety implications. NEVER roll your own crypto without expert review;
+this section captures EXISTING crypto as documentation, not a license
+to reuse.
+-->
+
+| Algorithm | Used for | Library | Reference | Notes |
+|---|---|---|---|---|
+| `<algo>` | `<use>` | `<lib>` | `<file:line>` | <notes> |
+| `<algo>` | `<use>` | `<lib>` | `<file:line>` | <notes> |
+
+### 3.1 Crypto-specific warnings
+
+- **NEVER** copy a hash/signature implementation without an audit by a
+  crypto-trained engineer.
+- **NEVER** copy the key-derivation code without verifying the params
+  match current OWASP/NIST guidance for your threat model.
+- Document the parameters verbatim: salt length, iterations, memory cost.
+
+---
+
+## 4. Notes
+
+- <algorithm observation — e.g. "algorithm X is only correct under assumption Y; if Y fails the output is silently wrong">
+- <observation>
+- <observation>
+
+---
+
+## 5. Extract-algorithms checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + complexity validation
+- [ ] Implementation blocks verbatim from cited `file:line` (no pseudo-code)
+- [ ] Complexity claims cite empirical benchmark OR analytical proof
+- [ ] "Tests / properties" backed by real test (not invented)
+- [ ] Crypto section (3) includes independent audit reference
+- [ ] >=50% of references are `[verified]`
+
+### Coverage
+
+- [ ] At least 5 algorithms documented (8 ideal)
+- [ ] Each algorithm has Big-O + practical constant
+- [ ] Each algorithm has real code snippet with file:line
+- [ ] Properties / tests captured (idempotence, determinism, etc.)
+- [ ] Crypto algorithms (if any) isolated in section 3 with warnings
+- [ ] Portability target explicit for each algorithm
+- [ ] File committed to `dissects/<system>/extract/algorithms.md`
+- [ ] Cross-link from `wiki/index.md`

@@ -1,0 +1,253 @@
+# Extract — Components — <system-name>
+
+<!--
+Phase 4 output of system-dissector. The "shopping list" of components
+that can be ported or integrated into another system. Each component
+is scored using the 6-criterion rubric below. Tiers drive the
+prioritization.
+
+Filling convention:
+- The rubric is the SOURCE OF TRUTH — do not adjust scores without
+  writing the reason in the rationale column.
+- Tier thresholds: T1 >= 50, T2 40-49, T3 < 40.
+- For Tier 1 components, always include a code excerpt (5-15 lines).
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Scoring + tiering decisions WILL drive
+DEV effort allocation. Each score and code excerpt MUST be backed by a
+real probe.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Probe commands**: `<e.g. wc -l module/, coverage report, import-graph dump>` [verified|estimated]
+- **Score audit date**: `<date of last re-scoring>` [verified|estimated]
+
+### Evidence rules
+
+- Each component row in section 2 MUST cite a real probe command for each score (e.g. C6 from coverage report).
+- Tier 1 code excerpts (section 3.x) MUST be verbatim from source — line numbers must resolve in clone.
+- Tier lists MUST mirror `wiki/modules.md` section 7 exactly (cross-link check).
+- If 0% of score references are tagged, the scoring is opinion not data — re-probe.
+
+## Como usar este documento
+
+- **Audience**: tech lead/PM decidindo quais componentes portar na próxima sprint.
+- **Next action**: revisar Tier 1 (`## 3`) e Effort estimate antes de alocar devs.
+- **Quando re-verificar**: a cada nova release do sistema alvo, ou quando houver mudança breaking em Tier 1.
+
+## 1. Scoring rubric (canonical C1-C6 × 0-10 = /60)
+
+<!--
+The 6 criteria below are the CANONICAL scoring rubric shared with
+`neodoo-integrate/SKILL.md` (Phase 5). Both skills MUST use these exact
+labels — do not rename or split. Scores are 0-10 per criterion; total
+is 0-60.
+
+Tier thresholds:
+- T1 ≥ 50 → port immediately (story BMAD P1)
+- T2 40-49 → evaluate case by case (M1, next sprint)
+- T3 < 40 → do not port (reference design only)
+-->
+
+| # | Criterion | 0 | 10 |
+|---|---|---|---|
+| **C1** | **Compatibility** (language / framework / runtime) | Unfamiliar stack — full rewrite required | Native match (Python ↔ Odoo, TS/JS ↔ Nuxt, Go ↔ NeoGo) |
+| **C2** | **Code quality** (tests, docs, idioms, readability) | Untested, undocumented, spaghetti | >80% coverage, idiomatic, well-documented |
+| **C3** | **License compatibility** (SPDX, distribution model) | GPL/AGPL/proprietary → blocks proprietary SaaS distribution | MIT/Apache/BSD with attribution |
+| **C4** | **Maintenance velocity** (recency, responsiveness, releases) | Stale (last commit > 18mo) or abandoned | Active (< 90d), responsive maintainers, regular releases |
+| **C5** | **Dependency footprint** (new transitive deps added) | > 5 new deps or brings native C lib | ≤ 2 new deps, all already in the consumer's tree |
+| **C6** | **Reversibility** (ease of unwinding the port) | Lock-in core — can't extract without surgery | Wrap/adapter pattern — trivially reversible |
+
+**Total possible**: 60. **Thresholds**: T1 ≥ 50, T2 40-49, T3 < 40.
+
+### 1.1 Heuristics per criterion
+
+- **C1 (Compatibility)**: +10 if language matches one of {Python (Odoo),
+  TS/JS (Nuxt), Go (NeoGo)}; +5 if minor adaptation; 0 if rewrite needed.
+- **C2 (Code quality)**: anchored by coverage report and ADRs in
+  `wiki/decisions.md`; +10 requires >80% coverage + ADRs + docstrings.
+- **C3 (License compatibility)**: read `license-audit.md` §6 verdict
+  (✅ safe = 10, ⚠️ conditional = 5, ❌ blocking = 0). LGPL dynamic
+  linking OK = +5; GPL/AGPL = 0 (block).
+- **C4 (Maintenance velocity)**: anchored by `git log --since="90 days
+  ago"` + issue tracker activity; +10 = last commit < 30d AND open
+  issues answered < 7d.
+- **C5 (Dependency footprint)**: count new deps not already in the
+  consumer's `package.json` / `go.mod` / `__manifest__.py`; +10 = 0–2,
+  +5 = 3–5, −10 = > 5 OR adds C/Rust native lib.
+- **C6 (Reversibility)**: +10 if port is a thin adapter/wrap; +5 if
+  requires refactor but isolated; 0 if couples to consumer core (lock-in).
+
+---
+
+## 2. Scoring table — all candidate components
+
+| # | Component | C1 | C2 | C3 | C4 | C5 | C6 | Total | Tier |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<T1/T2/T3>` |
+| 2 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 3 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 4 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 5 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 6 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 7 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 8 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 9 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+| 10 | `<component>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<n>` | `<sum>` | `<tier>` |
+
+---
+
+## 3. Tier 1 — port immediately (≥ 50/60)
+
+### 3.1 `<component-1>` — total `<n>/60`
+
+- **Path**: `<repo path>`
+- **Deep-dive**: `<link to module-<n>.md>`
+- **Rationale**: <why this is high-value to port>
+- **Reuse target**: `<your-system / product / library name>`
+
+#### Files to copy
+
+- `<path/to/file>` — <one-line purpose>
+- `<path/to/file>` — <one-line purpose>
+- `<path/to/file>` — <one-line purpose>
+
+#### Code excerpt (entry point or representative snippet)
+
+```<lang>
+<real snippet from the codebase, 5-15 lines>
+```
+
+#### Blockers
+
+- <blocker 1>
+- <blocker 2>
+
+#### Effort estimate
+
+- **LOC**: `<n>`
+- **Person-days**: `<n>`
+- **Risk**: `low / medium / high`
+- **Dependencies to update in target host**: `<list>`
+
+---
+
+### 3.2 `<component-2>` — total `<n>/60`
+
+(copy the structure from 3.1)
+
+---
+
+### 3.3 `<component-3>` — total `<n>/60`
+
+(copy the structure from 3.1)
+
+---
+
+## 4. Tier 2 — evaluate case by case (40-49)
+
+### 4.1 `<component-4>` — total `<n>/60`
+
+- **Path**: `<repo path>`
+- **Deep-dive**: `<link>`
+- **Rationale**: <why worth considering>
+- **Blockers to promotion**: <what would push it to Tier 1>
+- **Effort estimate**: `<person-days>`
+
+### 4.2 `<component-5>` — total `<n>/60`
+
+- **Path**: `<repo path>`
+- **Deep-dive**: `<link>`
+- **Rationale**: <why worth considering>
+- **Blockers to promotion**: <what would push it to Tier 1>
+- **Effort estimate**: `<person-days>`
+
+---
+
+## 5. Tier 3 — do not port (<40)
+
+| Component | Total | Why not |
+|---|---|---|
+| `<component-6>` | `<n>/60` | <reason> |
+| `<component-7>` | `<n>/60` | <reason> |
+| `<component-8>` | `<n>/60` | <reason> |
+| `<component-9>` | `<n>/60` | <reason> |
+| `<component-10>` | `<n>/60` | <reason> |
+
+---
+
+## 6. Executive recommendation
+
+<!--
+Write this paragraph for a decision-maker. It must stand alone.
+-->
+
+Port the **`<n>` Tier 1 components** in the next sprint. Total estimated
+effort: **`<n>` person-days**. Expected reduction in custom-code volume
+on the target host: **`<approx>%`**. Components to defer: **`<list with
+one-line reasons>`**. Components to leave alone: **`<count of Tier 3>`**
+because `<reason>`.
+
+> **Decision needed**: approve the Tier 1 list before kickoff so deep-dive
+> resources can be re-prioritized.
+
+---
+
+## 7. Open questions
+
+- [ ] <question requiring decision before porting>
+- [ ] <question>
+- [ ] <question>
+
+---
+
+## 8. Notes
+
+- <scoring note — e.g. "C6 looked low until we excluded test fixtures; real coverage is 71%">
+- <note>
+- <note>
+
+---
+
+## 9. Extract-components checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + probe commands
+- [ ] Every component row in section 2 cites a real probe command per score
+- [ ] Tier 1 code excerpts verbatim from source (line numbers resolve in clone)
+- [ ] Tier lists mirror `wiki/modules.md` section 7 exactly
+- [ ] >=50% of references are `[verified]`
+
+### Scoring
+
+- [ ] Rubric (section 1) reviewed and accepted by stakeholder
+- [ ] Each criterion scored 0-10 with rationale captured
+- [ ] No ties broken arbitrarily (use heap or rule: prefer higher C1, then C3)
+
+### Tiers
+
+- [ ] Tier 1 components (>= 50) all have code excerpt + blockers
+- [ ] Tier 2 components (40-49) all have promotion blockers
+- [ ] Tier 3 components (< 40) all have one-line "why not"
+
+### Recommendation
+
+- [ ] Executive recommendation written for non-technical reader
+- [ ] Effort estimate sums match person-day totals in deep-dive files
+- [ ] Open questions listed
+
+### Hand-off
+
+- [ ] File committed to `dissects/<system>/extract/components.md`
+- [ ] Tier list mirrors `wiki/modules.md` section 7
+- [ ] Cross-link from `wiki/index.md`
+- [ ] `neodoo-integrate` picks up Tier 1 list (if companion run)
+- [ ] C3 scores read from `extract/license-audit.md` §6 (single source of truth)
+- [ ] Cross-link to `extract/api.md` for any component with outbound HTTP
+- [ ] Cross-link to `wiki/decisions.md` for components constrained by ADRs
+- [ ] Cross-link to `risk-raw.md` for any component with severity ≥ high risk

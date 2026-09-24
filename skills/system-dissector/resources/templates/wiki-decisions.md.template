@@ -1,0 +1,151 @@
+# Wiki — Decisions — <system-name>
+
+<!--
+Phase 3 output of system-dissector. Captures the Architecture Decision
+Records (ADRs) **observed** in the target system. These are decisions
+the *original* authors made. The audit is downstream-neutral — what
+matters here is fidelity to the source.
+
+Format: MADR 4.0 (https://adr.github.io/madr/). One ADR per top-level
+section; number sequentially. Status values: proposed | accepted |
+deprecated | superseded by <id>.
+
+Goal: feed Phase 5 HANDOFF (`handoff/decisions.md`) with the *why*
+behind the *what*. Porting/integrating without ADRs means porting the
+code without the constraints — guaranteed regression.
+-->
+
+## Como usar este documento
+
+- **Audience**: tech lead explicando trade-offs ao time que vai
+  implementar, portar, ou fazer fork.
+- **Next action**: antes de escrever qualquer
+  `handoff/implementation-guide.md` para um componente Tier 1, ler os
+  ADRs do componente-alvo.
+- **Quando re-verificar**: quando o sistema-alvo anuncia breaking change,
+  ou quando devs proporem reescrever lógica portada.
+
+## Evidence
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Probe commands**: `<e.g. rg "TODO|FIXME|@deprecated|@see ADR" repo/, git log --grep="ADR-">` [verified|estimated]
+- **Last audit**: `<YYYY-MM-DD>`
+
+---
+
+<!--
+TEMPLATE PER ADR — copy this block for each ADR you discover. Replace
+the placeholder text. Keep the YAML header at the top — it's machine-
+readable for downstream tooling (porting checklists, invariant
+checkers).
+
+How to *find* ADRs in the target system:
+  1. Check for `docs/adr/`, `docs/decisions/`, `architecture/decisions/`.
+  2. Look in `README.md`, `CONTRIBUTING.md`, `ARCHITECTURE.md` for
+     "Why we chose X over Y" sections.
+  3. Search git log: `git log --all --grep="ADR-" --grep="RFC"` etc.
+  4. Look at deprecated code paths — they usually have @deprecated
+     comments pointing at the ADR.
+  5. Look at code comments that read "we tried X but Y". Those are
+     implicit decisions without a record — flag them as `proposed`.
+-->
+
+## ADR-001 — <short title>
+
+```yaml
+adr:
+  id: ADR-001
+  title: "<short imperative title, e.g. Use PostgreSQL over MySQL for primary store>"
+  status: proposed | accepted | deprecated | superseded
+  date: <YYYY-MM-DD>
+  deciders: <list of authors/maintainers>
+  consulted: <list, if any>
+  informed: <list, if any>
+  source: <path:line | URL to discussion | commit SHA>
+  evidence: verified | estimated
+```
+
+### Context and problem statement
+
+<Describe the forces at play: technical, business, political, social,
+local to the project. Use 2-4 paragraphs. This is the "why are we even
+talking about this" section.>
+
+### Considered options
+
+1. **<Option A>** — <one-line summary>
+2. **<Option B>** — <one-line summary>
+3. **<Option C>** — <one-line summary>
+
+### Decision outcome
+
+Chosen option: **<"Option A" or similar>**, because <1-3 sentences
+capturing the deciding factor>.
+
+### Consequences
+
+- **Good**: <positive consequence>
+- **Good**: <positive consequence>
+- **Bad**: <negative consequence — every decision has trade-offs>
+- **Bad**: <negative consequence>
+
+### Confirmation
+
+<How do we know this decision was/wasn't the right one? What metrics
+or signals tell us? E.g. "p95 query latency under 50ms for 1 year">.
+
+### Pros and cons of the options
+
+#### Option A — <name>
+
+- Good: <argument a>
+- Good: <argument b>
+- Neutral: <argument c>
+- Bad: <argument d>
+
+#### Option B — <name>
+
+- Good: <argument a>
+- Bad: <argument b>
+
+#### Option C — <name>
+
+- Neutral: <argument a>
+- Bad: <argument b>
+
+---
+
+## ADR-002 — <short title>
+
+(copy the structure from ADR-001)
+
+---
+
+## ADR-003 — <short title>
+
+(copy the structure from ADR-001)
+
+---
+
+## Notes for downstream integrators
+
+- **Critical invariants**: list the ADRs whose outcomes are *inviolable*
+  constraints for any port. E.g. "ADR-005 mandates idempotency keys on
+  all write endpoints — any port without this is wrong".
+- **Open questions**: list ADRs that the original team marked `proposed`
+  or where the rationale is thin. These are *your* decisions to make
+  when porting.
+- **Superseded history**: if `git log` shows an ADR was reverted or
+  superseded, capture that here — don't inherit the bad decision.
+
+## Cross-references
+
+- `wiki/architecture.md` — what was built
+- `wiki/modules.md` — where each decision manifests in code
+- `extract/components.md` — which components each ADR constrains
+- `risk-raw.md` — risks tied to specific ADR outcomes (e.g. "ADR-007
+  chose SQLite for simplicity — risk under heavy write contention")
+- `handoff/decisions.md` — copy/handoff version of these ADRs for the
+  implementing team (Phase 5 artifact)
+- `<downstream skill:port-plan path>` — opt-in port plan specific to a
+  particular destination stack

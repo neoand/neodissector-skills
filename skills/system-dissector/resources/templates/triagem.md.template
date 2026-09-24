@@ -1,0 +1,301 @@
+# Triage — <system-name>
+
+<!--
+Phase 1 output of system-dissector.
+Goal: classify the target, capture initial metadata, define scope, and
+select deep-dive candidates. This file is the "executive summary" before
+investing hours in deep dives.
+
+Filling convention:
+- All <placeholders> MUST be replaced before declaring Phase 1 complete.
+- Use `n/a` (not `?` or empty) for fields that genuinely do not apply.
+- Quantitative claims (LOC, deps count) MUST come from real commands shown
+  in the Notes section, not from memory.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. The DEV team needs to know what is
+verified fact vs estimated hypothesis BEFORE consuming this document.
+
+Mark each `file:line` reference in the body with one of:
+- [verified] — path confirmed via `find`, `ls`, `git ls-files`, or read in clone
+- [estimated] — inferred from naming patterns, not validated against source
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Commands run to verify**: `<e.g. git ls-files | head, find . -name '*.py' | wc -l>` [verified|estimated]
+
+### Evidence rules
+
+- Every `file:line` reference in the body MUST be tagged `[verified]` or `[estimated]`.
+- If 0% of references are tagged, the output has high hallucination risk — DEV must re-dissect.
+- Aim for >=50% `[verified]` references; output dominated by `[estimated]` is a WARN signal.
+
+## Como usar este documento
+
+- **Audience**: dev sênior triando se vale aprofundar em deep-dives.
+- **Next action**: revisar `## 3. Statistics` e `## 5. Deep-dive candidates` antes de alocar horas de Phase 2.
+- **Quando re-verificar**: quando o sistema alvo lançar nova release ou quando paths mudarem.
+
+## Header
+
+| Field | Value |
+|---|---|
+| **Date** | `<YYYY-MM-DD>` |
+| **Dissector** | `<agent-id or human>` |
+| **Target URL / Source** | `<github.com/foo/bar or /path/to/repo or binary>` |
+| **Target Type** | `source` \| `binary` \| `mobile` \| `firmware` \| `protocol` \| `hybrid:<list>` |
+| **Classification** | `app` \| `library` \| `framework` \| `service` \| `kernel` \| `tool` \| `protocol-spec` \| `mixed` |
+| **Domain** | `<erp, fintech, cms, voip, iot, ml, devtool, ...>` |
+| **License** | `<MIT, Apache-2.0, GPL-3.0, proprietary, ...>` |
+| **Reusability Goal** | `port` \| `integrate` \| `reference-only` \| `audit-only` |
+| **Companion run** | `neodoo-integrate: yes/no` |
+
+---
+
+## 1. Metadata
+
+### 1.1 Identity
+
+| Field | Value |
+|---|---|
+| **Display name** | `<display-name>` |
+| **Repo / package** | `<owner/repo or package-name>` |
+| **Version analyzed** | `<tag, commit SHA, or build>` |
+| **Last release** | `<YYYY-MM-DD or "unknown">` |
+| **Maintainer** | `<org or github-handle>` |
+| **Stars / Forks** | `<stars> / <forks>` |
+| **Open issues** | `<count>` |
+| **Velocity** | `<commits/week, last 90 days>` |
+
+### 1.2 Tech stack
+
+| Field | Value |
+|---|---|
+| **Primary language(s)** | `<lang: %share>` |
+| **Secondary language(s)** | `<lang: %share>` |
+| **Framework / runtime** | `<framework version>` |
+| **Build system** | `<make, cmake, cargo, pnpm, gradle, ...>` |
+| **Package manager** | `<pip, npm, pnpm, cargo, apt, ...>` |
+| **Database(s)** | `<postgres, mysql, sqlite, mongo, redis, ...>` |
+| **Frontend** | `<react, vue, none, cli-only, ...>` |
+| **Distribution** | `<docker, native, pkg, snap, ...>` |
+
+### 1.3 Compatibility surface
+
+| Field | Value |
+|---|---|
+| **OS** | `<linux, macos, windows, bsd, ios, android, ...>` |
+| **CPU** | `<x86_64, arm64, riscv64, multi>` |
+| **Min runtime** | `<python>=3.11, node>=20, jdk>=21, glibc>=2.35>` |
+| **API style** | `REST` \| `GraphQL` \| `gRPC` \| `SOAP` \| `CLI` \| `library-only` \| `mixed` |
+| **Wire format** | `JSON` \| `protobuf` \| `msgpack` \| `XML` \| `bson` \| `binary-custom` |
+
+---
+
+## 2. High-level structure
+
+<!--
+Capture the top-level layout. Use `tree -L 2 -d` output verbatim or a
+manually curated equivalent. Aim for <= 25 lines; deeper structure lives in
+deep-dive outputs.
+-->
+
+```text
+<system-name>/
+├── <dir-1>/         # <one-line purpose>
+├── <dir-2>/         # <one-line purpose>
+├── <dir-3>/         # <one-line purpose>
+├── <top-level-file> # <purpose, e.g. config, manifest, entrypoint>
+└── <top-level-file> # <purpose>
+```
+
+### 2.1 Notable top-level entries
+
+- `<path>`: <why it matters, e.g. main entrypoint, plugin registry>
+- `<path>`: <why it matters>
+- `<path>`: <why it matters>
+
+---
+
+## 3. Statistics
+
+| Metric | Value | Source command |
+|---|---|---|
+| **Total LOC** | `<count>` | `cloc .` |
+| **Code LOC** (excl. blanks/comments) | `<count>` | `cloc .` |
+| **Files (total)** | `<count>` | `find . -type f | wc -l` |
+| **Files (source)** | `<count>` | `find . -type f -name '*.py' -o -name '*.ts' | wc -l` |
+| **Modules / packages** | `<count>` | `<command>` |
+| **Dependencies (direct)** | `<count>` | `cat <manifest> | jq '.deps'` |
+| **Dependencies (transitive)** | `<count>` | `<command, e.g. pip-compile, npm ls>` |
+| **Repo size on disk** | `<MB or GB>` | `du -sh .` |
+| **Biggest file** | `<path> — <LOC>` | `find . -type f -exec wc -l {} + | sort -rn | head -5` |
+| **Test/code ratio** | `<ratio>` | `find . -path '*/test*' -name '*.py' | wc -l` |
+
+---
+
+## 4. Initial risk assessment
+
+<!--
+Quick heuristic pass. Full audit is Phase 2 territory (audit-context-building
+or 007). Mark items with severity H/M/L and link CVE/issue when known.
+-->
+
+| Area | Finding | Severity | Reference |
+|---|---|---|---|
+| **Auth** | <none / bcrypt / JWT / OAuth / custom> | `<H/M/L/none>` | `<file:line>` |
+| **Crypto** | <libsodium / openssl / custom / none> | `<H/M/L/none>` | `<file:line>` |
+| **Input validation** | <pydantic / zod / none / mixed> | `<H/M/L/none>` | `<file:line>` |
+| **SQL injection** | <ORM-only / raw SQL found / parameterized> | `<H/M/L/none>` | `<file:line>` |
+| **Hardcoded secrets** | <none found / possible / confirmed> | `<H/M/L/none>` | `<gitleaks output>` |
+| **Permissions / sandbox** | <root required / user-level / sandboxed> | `<H/M/L/none>` | `<file>` |
+| **Network exposure** | <localhost / LAN / public / none> | `<H/M/L/none>` | `<bind addr>` |
+| **Supply chain** | <lockfile present / pinned / signed> | `<H/M/L/none>` | `<lockfile>` |
+| **Known CVEs** | <count by severity> | `<H/M/L/none>` | `<trivy/grype/snyk output>` |
+| **License risk** | <compatible / copyleft contamination / proprietary deps> | `<H/M/L/none>` | `<license-check output>` |
+
+### 4.1 Top concerns (max 5)
+
+1. <concern 1 — one sentence, with reference>
+2. <concern 2>
+3. <concern 3>
+4. <concern 4>
+5. <concern 5>
+
+---
+
+## 5. Deep-dive candidates
+
+<!--
+Pick 3-7 modules to deep-dive in Phase 2. Selection criteria:
+- Highest reusability value (for port/integrate goals)
+- Highest architectural interest (core abstractions, extension points)
+- Highest risk (auth, crypto, data integrity)
+- Most representative (typical pattern to extract)
+Use the scoring rubric from `extract-components.md` as a tie-breaker.
+-->
+
+| # | Module / Component | Reason to dive | Priority | Output target |
+|---|---|---|---|---|
+| 1 | `<path/to/module>` | <one-line rationale> | `P0` | `module-<n>.md` |
+| 2 | `<path/to/module>` | <one-line rationale> | `P0` | `module-<n>.md` |
+| 3 | `<path/to/module>` | <one-line rationale> | `P1` | `module-<n>.md` |
+| 4 | `<path/to/module>` | <one-line rationale> | `P1` | `module-<n>.md` |
+| 5 | `<path/to/module>` | <one-line rationale> | `P2` | `module-<n>.md` |
+| 6 | `<path/to/module>` | <one-line rationale> | `P2` | `module-<n>.md` |
+| 7 | `<path/to/module>` | <one-line rationale> | `P3` | `module-<n>.md` |
+
+---
+
+## 6. Scope decisions
+
+### 6.1 IN scope
+
+- <area / concern that WILL be analyzed in this dissect>
+- <area>
+- <area>
+
+### 6.2 OUT of scope
+
+- <area / concern explicitly skipped, with reason>
+- <area>
+- <area>
+
+### 6.3 Open questions
+
+- [ ] <question requiring human decision>
+- [ ] <question>
+- [ ] <question>
+
+---
+
+## 7. Notes
+
+<!--
+Free-form capture of anything useful that does not fit above:
+- Quirks observed (e.g. "build requires Go 1.23 despite CI matrix claiming 1.21")
+- Workarounds applied (e.g. "had to disable plugin X to make the repo build")
+- Commands run during triage (paste verbatim for reproducibility)
+- Links to issues/PRs that may have affected the version analyzed
+-->
+
+- <note>
+- <note>
+- <note>
+
+### 7.1 Commands run during triage
+
+```bash
+# <one-line description>
+<command>
+
+# <one-line description>
+<command>
+
+# <one-line description>
+<command>
+```
+
+### 7.2 Sources of truth used
+
+- `<URL or path>` — <what it provided>
+- `<URL or path>` — <what it provided>
+
+---
+
+## 8. Phase 1 checklist
+
+<!--
+Tick every box before declaring Phase 1 done and moving to Phase 2.
+-->
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + verification commands
+- [ ] Every `file:line` reference in body tagged `[verified]` or `[estimated]`
+- [ ] >=50% of references are `[verified]` (otherwise escalate for re-dissect)
+- [ ] No purely invented paths (catch with `find /path/to/repo -name <claimed-file>`)
+
+### Metadata
+
+- [ ] Target URL/source captured and verified reachable
+- [ ] Target type classified (source / binary / mobile / firmware / protocol)
+- [ ] Classification assigned (app / library / framework / service / ...)
+- [ ] Version pinned (tag or commit SHA recorded)
+- [ ] License identified and compatibility checked
+- [ ] Reusability goal declared (port / integrate / reference / audit)
+
+### Recon
+
+- [ ] `tree -L 2` captured
+- [ ] `cloc` (or equivalent) run, totals recorded
+- [ ] Direct deps counted, lockfile inspected
+- [ ] Biggest file identified
+- [ ] Test coverage sanity-checked
+
+### Risk
+
+- [ ] Auth model classified
+- [ ] Crypto library identified
+- [ ] Input validation strategy classified
+- [ ] Secret scan run (gitleaks / trufflehog / similar)
+- [ ] CVE scan run (trivy / grype / snyk / similar)
+- [ ] License compatibility checked
+
+### Planning
+
+- [ ] 3-7 deep-dive candidates selected with rationale
+- [ ] Priorities assigned (P0..P3)
+- [ ] IN/OUT of scope documented
+- [ ] Open questions list created
+- [ ] Companion runs decided (neodoo-integrate yes/no)
+
+### Hand-off
+
+- [ ] File committed to `dissects/<system>/triagem.md`
+- [ ] Cross-links added to `wiki/index.md` once Phase 3 starts
+- [ ] Stakeholder notified of scope and timeline estimate

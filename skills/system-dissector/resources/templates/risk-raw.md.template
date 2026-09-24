@@ -1,0 +1,159 @@
+# Risk — Raw — <system-name>
+
+<!--
+Phase 4 output of system-dissector. UNSCORED risk inventory — the raw
+material that the C1-C6 rubric in `extract/components.md` and the final
+gate in `integrate/risk-score.md` will quantise.
+
+Goal: don't lose context between "this feels risky" (triage impression)
+and "this is a T2 / don't port" (scored decision). If a risk isn't in
+this file, it can't be quoted in any decision.
+
+Filling conventions:
+- One risk per row. Tag category (security | license | ops | data |
+  vendor | technical | legal).
+- Capture: WHAT, WHERE in the system, WHY it matters,
+  SEVERITY (low/medium/high), and MITIGATION idea (even if you reject it).
+- Severity here is your gut — the rubric turns it into a number later.
+-->
+
+## Como usar este documento
+
+- **Audience**: integrador + risk reviewer (stack-agnostic).
+- **Next action**: read §1 (security) and §3 (license) FIRST — these
+  are gate-blockers regardless of score.
+- **Quando re-verificar**: a cada release maior do sistema-alvo, ou
+  quando uma CVE for anunciada.
+
+## Evidence
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Probe commands**: `<e.g. nmap --script=vuln, npm audit, grype, govulncheck, snyk>` [verified|estimated]
+- **Last audit**: `<YYYY-MM-DD>`
+
+---
+
+## 1. Security risks
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. SQL injection in legacy search endpoint>` | `repo/path/search.py:142` | high | Use parameterised queries; deprecate legacy search | [verified|estimated] |
+| 2 | `<e.g. hardcoded SECRET_KEY>` | `repo/path/config.py:18` | high | Move to env / KMS | [verified|estimated] |
+| 3 | `<e.g. uses MD5 for password hashing>` | `repo/path/auth.py:55` | medium | Migrate to argon2id | [verified|estimated] |
+| 4 | `<e.g. CORS allows *>` | `repo/path/server.py:33` | medium | Restrict to allowlist | [verified|estimated] |
+
+### 1.1 CVE inventory (last 24 months)
+
+| CVE | Affected dep | Severity | Patched? | Notes |
+|---|---|---|---|---|
+| `<CVE-2024-XXXXX>` | `<dep v1.2.3>` | critical | yes (v1.2.4) | `<link to advisory>` |
+
+---
+
+## 2. Operational risks
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. no graceful shutdown — kills in-flight requests>` | `<path>` | medium | Add SIGTERM handler | [verified|estimated] |
+| 2 | `<e.g. single-threaded sync code under load>` | `<path>` | medium | Migrate to async | [verified|estimated] |
+| 3 | `<e.g. no healthcheck endpoint>` | `<path>` | low | Add `/healthz` | [verified|estimated] |
+
+---
+
+## 3. License / legal risks
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. AGPL transitive dep>` | `repo/path/requirements.txt:42` | high | Replace with MIT equivalent | [verified|estimated] |
+| 2 | `<e.g. missing SPDX headers on internal modules>` | `<path>` | low | Add SPDX via reuse tool | [verified|estimated] |
+
+(See `license-audit.md` for the SPDX layer.)
+
+---
+
+## 4. Data / privacy risks (LGPD)
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. hard DELETE on user PII>` | `<path>` | high | Anonymise per neoai-dev-conventions.md LGPD rule | [verified|estimated] |
+| 2 | `<e.g. logs include full credit-card numbers>` | `<path>` | high | Tokenise at edge; redact in logs | [verified|estimated] |
+| 3 | `<e.g. no consent flag for analytics>` | `<path>` | medium | Add consent gate before telemetry | [verified|estimated] |
+
+---
+
+## 5. Vendor / business risks
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. maintained by single person, bus-factor 1>` | `<gh profile>` | medium | Vendor into downstream before maintainer disappears | [verified|estimated] |
+| 2 | `<e.g. last commit > 18 months ago>` | `<git log>` | medium | Reference design only, do not depend | [verified|estimated] |
+| 3 | `<e.g. breaking API change announced without LTS>` | `<GH issue #N>` | low | Pin version + plan migration | [verified|estimated] |
+
+---
+
+## 6. Technical / architectural risks
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. circular dep between order-service and payment-service>` | `<module>` | medium | Decouple via outbox events | [verified|estimated] |
+| 2 | `<e.g. synchronous RPC chain > 5 hops>` | `<path>` | medium | Identify long-tail bottlenecks; flatten | [verified|estimated] |
+| 3 | `<e.g. no idempotency keys on write endpoints>` | `<ADR-007>` | high | Add Idempotency-Key header per neoai patterns | [verified|estimated] |
+
+---
+
+## 7. Multi-tenancy risks
+
+> If the target system is multi-tenant or is being ported into a
+> multi-tenant context, capture tenant-isolation risks here. These are
+> the ones that can leak data across orgs.
+
+| # | Risk | Where | Severity | Mitigation idea | Evidence |
+|---|---|---|---|---|---|
+| 1 | `<e.g. raw SQL interpolation without org filter>` | `<path>` | high | Add `organization_id` filter to every query | [verified|estimated] |
+| 2 | `<e.g. background job processes all orgs together>` | `<path>` | high | Queue per-org, worker per-org | [verified|estimated] |
+| 3 | `<e.g. cache key missing org>` | `<path>` | medium | Namespace cache by org_id | [verified|estimated] |
+
+---
+
+## 8. Pre-rubric impressions (free text)
+
+> Free-form notes. These become inputs to scoring but don't directly
+> become scores. Use for context the rubric can't capture.
+
+- `<e.g. "the codebase is well-tested but only in the happy path —
+  adversarial test coverage is thin. This won't show up in C6 score
+  because coverage is high overall, but it's a real risk.">`
+- `<e.g. "the maintainer is responsive on GH issues but the project
+  isn't funded — sustainability risk if the downstream consumer adopts this as primary.">`
+- `<e.g. "two competing forks have appeared in the last year; community
+  is split. Risk of porting the wrong line.">`
+
+---
+
+## 9. Risks explicitly accepted (with rationale)
+
+> Some risks are real but acceptable. Document them here so future
+> reviewers see the decision was conscious, not accidental.
+
+| # | Risk | Why accepted | Accepted by | Date |
+|---|---|---|---|---|
+| 1 | `<e.g. MIT dep under 2-clause BSD has no patent grant>` | `<low commercial risk in our space>` | Anderson | `<YYYY-MM-DD>` |
+
+---
+
+## 10. Risks escalated to security / legal
+
+| # | Risk | Escalated to | Date | Status |
+|---|---|---|---|---|
+| 1 | `<e.g. AGPL dep found late>` | `<cred-omega / 007 / Anderson>` | `<YYYY-MM-DD>` | open / resolved |
+
+---
+
+## 11. Cross-references
+
+- `extract/components.md` — C2 (code quality) and C4 (maintenance) read from here
+- `license-audit.md` — §3 of this file is the SPDX audit input
+- `extract/api.md` — §1.1 of this file cross-links to outbound API risks
+- `wiki/decisions.md` — §6 risks reference ADR outcomes
+- `integrate/risk-score.md` — Phase 5 final scoring consumes §1–§7 here
+- `neodoo-integrate/SKILL.md` — gates 2 (license) and 3 (security) consume this file

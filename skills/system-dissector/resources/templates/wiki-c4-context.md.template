@@ -1,0 +1,165 @@
+# C4 — Context — <system-name>
+
+<!--
+Phase 3 output of system-dissector. C4 Level 1: the system in its
+environment. Captures WHO uses it and WHAT it talks to, intentionally
+NOT how it works internally (that lives in c4-container.md).
+
+Filling convention:
+- Personae are USER TYPES, not individuals. Two or three is enough.
+- External systems are things you call or that call you over a wire.
+- Keep the diagram small (4-10 nodes). One Mermaid C4Context block.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Persona + external system claims must
+be backed by telemetry (logs, auth events, network calls) — not guessed.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Telemetry used**: `<e.g. nginx access logs, auth provider console, OTel spans>` [verified|estimated]
+- **Persona count**: `<n verified>` / `<n total claimed>`
+
+### Evidence rules
+
+- Persona claims (volume, goal) MUST be backed by a data source — log aggregation, signup funnel, support tickets.
+- External system list MUST be confirmed via outbound connection log (`ss -tnp`, egress firewall logs, OTel egress spans).
+- Diagram nodes MUST match real personae/services — no invented clients.
+- If 0% of persona/system references are tagged, the C4 context is hypothetical — re-dissect.
+
+## Como usar este documento
+
+- **Audience**: arquiteto/PM querendo entender quem depende do sistema e quais integrações externas existem.
+- **Next action**: revisar `## 4. External systems` antes de qualquer mudança de SLA/dependência.
+- **Quando re-verificar**: sempre que um novo cliente externo for integrado ou um persona abandonar o sistema.
+
+## 1. System name
+
+`<system-name>` — `<one-sentence positioning>`.
+
+| Field | Value |
+|---|---|
+| **Version analyzed** | `<tag or sha>` |
+| **Status** | `<alpha / beta / stable / deprecated>` |
+| **Maintainer** | `<org / handle>` |
+| **Repository** | `<URL>` |
+
+---
+
+## 2. Personae
+
+### 2.1 `<persona-1>`
+
+- **Role**: `<one-line>`
+- **Goal**: `<what they want to achieve>`
+- **Interaction surface**: `<UI / API / CLI / file>`
+- **Volume**: `<approximate users or requests>`
+
+### 2.2 `<persona-2>`
+
+- **Role**: `<one-line>`
+- **Goal**: `<what they want>`
+- **Interaction surface**: `<...>`
+- **Volume**: `<...>`
+
+### 2.3 `<persona-3>` *(if applicable)*
+
+- **Role**: `<one-line>`
+- **Goal**: `<what they want>`
+- **Interaction surface**: `<...>`
+- **Volume**: `<...>`
+
+---
+
+## 3. The system in scope
+
+`<system-name>` is the system whose architecture, modules, and components
+are documented in this wiki. Everything outside the System_Boundary below
+is treated as an external dependency.
+
+**In scope:**
+
+- <scope item>
+- <scope item>
+- <scope item>
+
+**Out of scope:**
+
+- <out-of-scope item — typically: "deployment infrastructure", "monitoring stack", "adjacent product">
+- <item>
+
+---
+
+## 4. External systems
+
+| System | Direction | Protocol | Data exchanged | Why needed |
+|---|---|---|---|---|
+| `<ext-A>` | `<in / out / both>` | `<HTTPS / TCP / gRPC / SFTP>` | `<description>` | `<one-line>` |
+| `<ext-B>` | `<direction>` | `<protocol>` | `<description>` | `<one-line>` |
+| `<ext-C>` | `<direction>` | `<protocol>` | `<description>` | `<one-line>` |
+| `<ext-D>` | `<direction>` | `<protocol>` | `<description>` | `<one-line>` |
+
+### 4.1 Notes on dependencies
+
+- `<ext-A>`: <one-line about SLA, fallback, reliability>
+- `<ext-B>`: <one-line>
+- `<ext-C>`: <one-line>
+- `<ext-D>`: <one-line>
+
+---
+
+## 5. Context diagram
+
+```mermaid
+C4Context
+    title Context diagram for <system-name>
+
+    Person(admin, "Admin", "Configures and operates the system")
+    Person(user, "End user", "<primary use case>")
+
+    System(system, "<system-name>", "<one-line positioning>")
+
+    System_Ext(extA, "<External system A>", "<what it does>")
+    System_Ext(extB, "<External system B>", "<what it does>")
+    System_Ext(extC, "<External system C>", "<what it does>")
+
+    Rel(admin, system, "Administers", "HTTPS/UI")
+    Rel(user, system, "Uses", "HTTPS/API")
+    Rel(system, extA, "Reads/writes", "HTTPS/JSON")
+    Rel(system, extB, "Calls", "gRPC")
+    Rel(system, extC, "Subscribes to events", "WebSocket")
+```
+
+---
+
+## 6. Notes
+
+- <architectural observation at the context level — e.g. "system can run standalone (no extA) with reduced features">
+- <observation>
+- <observation>
+
+---
+
+## 7. C4 context checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + telemetry source
+- [ ] Every persona claim backed by real data source (logs, signup funnel)
+- [ ] External systems confirmed via outbound connection log
+- [ ] Diagram nodes match real running services (no invented clients)
+- [ ] >=50% of references are `[verified]`
+
+### Coverage
+
+- [ ] Persona list captures all user types (2-3 ideal)
+- [ ] Each persona has goal + interaction surface + volume
+- [ ] In-scope vs out-of-scope stated explicitly
+- [ ] External systems table has direction + protocol + data
+- [ ] Diagram renders in mermaid live editor without syntax errors
+- [ ] Diagram has <= 10 nodes total
+- [ ] File committed to `dissects/<system>/wiki/c4-context.md`
+- [ ] Cross-link from `wiki/index.md` works

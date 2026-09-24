@@ -1,0 +1,266 @@
+# Key Structures — <system-name>
+
+<!--
+Phase 2 output of system-dissector. Captures the central data models,
+their relationships, indexes, and constraints. Companion to
+`deep-dive-architecture.md` (process model) and `deep-dive-data-flows.md`
+(behaviour).
+
+Filling convention:
+- One model per section. Top models first (the ones hot queries hit).
+- Include indexes and constraints verbatim. They are gold for porting.
+- "Hot data structures" section is for query patterns, not raw tables.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Schema/constraint snippets MUST be
+copied verbatim from real DDL/migrations — otherwise DEV ports wrong
+types/indexes and corrupts prod.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **DDL source**: `<e.g. alembic/versions/, db/schema.sql, prisma/schema.prisma>` [verified|estimated]
+- **Schema extraction method**: `<e.g. pg_dump --schema-only, prisma db pull>` [verified|estimated]
+
+### Evidence rules
+
+- DDL snippets in `### 2.x` MUST be copied verbatim from a migration file or live dump.
+- Every `Source: file:line` field MUST be tagged `[verified]` or `[estimated]`.
+- Index/constraint blocks MUST list `CREATE INDEX` / `ADD CONSTRAINT` verbatim (no paraphrase).
+- If 0% of references are tagged, the schema is fictional — re-extract from DB.
+
+## Como usar este documento
+
+- **Audience**: dev portando schema para outro DB engine ou desenhando migrations em host alvo.
+- **Next action**: ler `## 2. Model details` seção por seção, conferir DDL com `pg_dump` ou similar no alvo.
+- **Quando re-verificar**: após qualquer migration nova no sistema alvo ou mudança de engine (postgres → mysql).
+
+## 1. Model overview
+
+| # | Model / table | Storage | Approx. rows | Hot? | Tier |
+|---|---|---|---|---|---|
+| 1 | `<model>` | `<table>` | `<est.>` | `yes/no` | `T1/T2/T3` |
+| 2 | `<model>` | `<table>` | `<est.>` | `yes/no` | `T1/T2/T3` |
+| 3 | `<model>` | `<table>` | `<est.>` | `yes/no` | `T1/T2/T3` |
+| 4 | `<model>` | `<table>` | `<est.>` | `yes/no` | `T1/T2/T3` |
+| 5 | `<model>` | `<table>` | `<est.>` | `yes/no` | `T1/T2/T3` |
+
+---
+
+## 2. Model details
+
+### 2.1 `<ModelName>`  *(most central)*
+
+**Purpose**: <one-line>
+
+**Source**: `<file:line>`
+
+#### Fields
+
+| Field | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| `id` | `<type>` | `no` | `<auto>` | `<PK>` |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `created_at` | `<timestamp>` | `no` | `<now>` | `<audit>` |
+| `updated_at` | `<timestamp>` | `no` | `<now>` | `<audit>` |
+
+#### Indexes
+
+```sql
+CREATE INDEX <idx-name>           ON <table> (<col>);
+CREATE UNIQUE INDEX <idx-name>    ON <table> (<col>);
+CREATE INDEX <idx-name>           ON <table> (<col1>, <col2>);
+```
+
+#### Constraints
+
+```sql
+ALTER TABLE <table>
+    ADD CONSTRAINT <name> CHECK (<condition>);
+ALTER TABLE <table>
+    ADD CONSTRAINT <name> FOREIGN KEY (<col>) REFERENCES <other>(<col>);
+```
+
+#### Notable invariants
+
+- <invariant 1 — e.g. "balance always >= 0, enforced in trigger / service">
+- <invariant 2>
+- <invariant 3>
+
+---
+
+### 2.2 `<ModelName>`
+
+**Purpose**: <one-line>
+
+**Source**: `<file:line>`
+
+#### Fields
+
+| Field | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| `id` | `<type>` | `no` | `<auto>` | `<PK>` |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+
+#### Indexes
+
+```sql
+CREATE INDEX <idx-name> ON <table> (<col>);
+```
+
+#### Constraints
+
+```sql
+ALTER TABLE <table> ADD CONSTRAINT <name> FOREIGN KEY ...
+```
+
+#### Notable invariants
+
+- <invariant>
+- <invariant>
+
+---
+
+### 2.3 `<ModelName>`
+
+**Purpose**: <one-line>
+
+**Source**: `<file:line>`
+
+#### Fields
+
+| Field | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| `id` | `<type>` | `no` | `<auto>` | `<PK>` |
+| `<field>` | `<type>` | `<yes/no>` | `<default>` | <notes> |
+
+#### Indexes
+
+```sql
+CREATE INDEX <idx-name> ON <table> (<col>);
+```
+
+#### Constraints
+
+```sql
+<DDL>
+```
+
+#### Notable invariants
+
+- <invariant>
+
+---
+
+### 2.4 `<ModelName>`
+
+(copy the structure above)
+
+---
+
+### 2.5 `<ModelName>`
+
+(copy the structure above)
+
+---
+
+## 3. Inheritance & polymorphism
+
+<!--
+Capture inheritance trees that affect queries (single-table inheritance
+means discriminator column, multi-table means joins).
+-->
+
+### 3.1 `<Root>` family
+
+```text
+Root (<root_table>)
+├── ChildA (<child_a_table>)  -- inherits: <fields>
+├── ChildB (<child_b_table>)  -- inherits: <fields>
+└── ChildC (<child_c_table>)  -- inherits: <fields>
+```
+
+- **Strategy**: `single-table` | `multi-table` | `concrete` | `mixin-only`
+- **Discriminator**: `<column, values>`
+- **Reference**: `<file:line>`
+
+### 3.2 `<Root>` family
+
+```text
+<tree>
+```
+
+- **Strategy**: `<type>`
+- **Discriminator**: `<column>`
+- **Reference**: `<file:line>`
+
+---
+
+## 4. Hot data structures
+
+<!--
+Query patterns the system actually runs. Helps prioritize index tuning
+and identify read amplification.
+-->
+
+### 4.1 Hottest reads
+
+| Query pattern | Model(s) hit | Index used | Frequency | Notes |
+|---|---|---|---|---|
+| `<example>` | `<table>` | `<index>` | `<qps>` | <notes> |
+| `<example>` | `<table>` | `<index>` | `<qps>` | <notes> |
+| `<example>` | `<table>` | `<index>` | `<qps>` | <notes> |
+
+### 4.2 Hottest writes
+
+| Mutation pattern | Model(s) hit | Lock model | Frequency | Notes |
+|---|---|---|---|---|
+| `<example>` | `<table>` | `<row / table / none>` | `<tps>` | <notes> |
+| `<example>` | `<table>` | `<row / table / none>` | `<tps>` | <notes> |
+| `<example>` | `<table>` | `<row / table / none>` | `<tps>` | <notes> |
+
+### 4.3 Cross-table hot paths
+
+| Pattern | Tables joined | Indexes relied on | Reference |
+|---|---|---|---|
+| `<example>` | `<a, b, c>` | `<idx on a.x, idx on b.y>` | `<file:line>` |
+| `<example>` | `<a, b, c>` | `<idx ...>` | `<file:line>` |
+
+---
+
+## 5. Notes
+
+- <data quirk — e.g. "created_at is in UTC but audit_log uses local TZ">
+- <observed anomaly>
+- <observed anomaly>
+
+---
+
+## 6. Key-structures checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + DDL source
+- [ ] Every `Source: file:line` field tagged `[verified]` or `[estimated]`
+- [ ] DDL snippets copied verbatim (no paraphrase) from migrations or DB dump
+- [ ] Index/constraint blocks are exact CREATE statements
+- [ ] >=50% of references are `[verified]`
+
+### Coverage
+
+- [ ] At least 5 central models documented (or all if fewer)
+- [ ] Each model has DDL-equivalent (create + indexes + constraints)
+- [ ] Inheritance / polymorphism captured
+- [ ] Hot read patterns enumerated with frequency
+- [ ] Hot write patterns captured with lock model
+- [ ] Every section has file:line reference
+- [ ] File committed to `dissects/<system>/deep-dive/key-structures.md`
+- [ ] Cross-link from `wiki/modules.md` and `wiki/c4-component.md` (if exists)

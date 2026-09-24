@@ -1,0 +1,183 @@
+# Extract — API Surface — <system-name>
+
+<!--
+Phase 4 output of system-dissector. Catalogues the *external* API surface
+of the target system — endpoints, RPCs, webhooks, SDKs the system calls
+out to, and authentication/transport mechanisms.
+
+Goal: give `neodoo-integrate` (Phase 5, OPT-IN) the contract information
+to map each endpoint to a downstream equivalent (or to a wrap/extract-pattern
+strategy when no equivalent exists). Phase 5 HANDOFF é stack-agnostic e
+não depende deste output.
+
+Filling conventions:
+- Group by *direction*: outbound (system calls external), inbound (system
+  exposes), peer-to-peer.
+- One row per endpoint. Headers / payloads summarised, not dumped.
+- For each row, name a `port_strategy`: reference | wrap | extract-pattern
+  | drop-in | source-port. (See `neodoo-integrate/SKILL.md` § Porting
+  patterns.)
+- The YAML block at the bottom is the machine-readable form `neodoo-integrate`
+  parses; the table above is the human-readable index.
+-->
+
+## Como usar este documento
+
+- **Audience**: integrador + dev backend que vai escrever adapters (stack-agnostic).
+- **Next action**: ler §1 (outbound) primeiro — APIs que o sistema-alvo CONSOME informam quais licenças/deps vão entrar no ecossistema.
+- **Quando re-verificar**: a cada release maior do sistema-alvo, ou quando `extract/dependencies.md` mudar.
+
+## Evidence
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Probe commands**: `<e.g. rg "axios|fetch|requests.post" repo/, OpenAPI export, pcap analysis>` [verified|estimated]
+- **Last audit**: `<YYYY-MM-DD>`
+
+---
+
+## 2. Outbound APIs (the system calls these)
+
+> APIs the target system CONSUMES. Each row is a dependency that will
+> enter the consumer's stack if the corresponding component is ported.
+
+| Endpoint | Method | Auth | Rate limit | Evidence | Port strategy |
+|---|---|---|---|---|---|
+| `<e.g. POST https://api.stripe.com/v1/charges>` | POST | Bearer | 100 rps | `repo/path/file.py:42` [verified] | reference / wrap / extract-pattern |
+| `<...>` | | | | `[verified|estimated]` | |
+
+### 2.1 Authentication patterns observed
+
+- `<e.g. OAuth2 client_credentials with JWT refresh, see file.py:120>` [verified|estimated]
+- `<e.g. API key in `Authorization: Bearer` header>` [verified|estimated]
+
+### 2.2 Retry / backoff patterns observed
+
+- `<e.g. exponential backoff 2^n seconds, max 5 retries, jittered>` [verified|estimated]
+- `<e.g. no retry — risky for downstream SLA>` [verified|estimated]
+
+### 2.3 Webhook signatures observed
+
+- `<e.g. HMAC-SHA256 in `X-Signature` header, compare against secret>` [verified|estimated]
+
+---
+
+## 3. Inbound APIs (the system exposes these)
+
+> APIs the target system PUBLISHES. Rows here inform whether the consumer
+> can reuse a consumer-side adapter, or whether the consumer needs to
+> re-expose equivalent endpoints.
+
+| Endpoint | Method | Auth | Use case | Evidence | Port strategy |
+|---|---|---|---|---|---|
+| `<e.g. POST /v1/webhooks/incoming>` | POST | HMAC | Receive 3rd-party events | `repo/path/router.js:88` [verified] | reference / wrap / drop-in |
+| `<...>` | | | | | |
+
+### 3.1 OpenAPI / Swagger contract
+
+- **File**: `<path or URL>` [verified|estimated]
+- **Notes**: `<e.g. auto-generated from decorators; 312 endpoints; 47 deprecated>`
+
+### 3.2 gRPC / protobuf contract
+
+- **Proto files**: `<repo/path/proto/*.proto>` [verified|estimated]
+- **Services**: `<list>` [verified|estimated]
+
+### 3.3 GraphQL schema
+
+- **Schema file**: `<path>` [verified|estimated]
+- **Mutations**: `<list>` [verified|estimated]
+
+---
+
+## 4. SDKs / client libraries shipped
+
+> If the target system ships its own client SDK, document it here. SDKs
+> are usually the cleanest port candidates (already a self-contained API).
+
+| SDK | Language | Repo | License | Notes |
+|---|---|---|---|---|
+| `<e.g. stripe-go>` | Go | `<github.com/stripe/stripe-go>` | MIT | Tier 1 candidate — already Go |
+| `<...>` | | | | |
+
+---
+
+## 5. Internal RPCs (peer-to-peer, not externally exposed)
+
+> Internal services calling each other. Useful when refactoring a
+> monolith into a multi-service consumer split (e.g. Nuxt/Nitro/NeoGo
+> ou qualquer outro decomposition).
+
+| Caller | Callee | Transport | Auth | Notes |
+|---|---|---|---|---|
+| `<e.g. order-service>` | `<inventory-service>` | gRPC | mTLS | `<path:line>` [verified] |
+| `<...>` | | | | |
+
+---
+
+## 6. Deprecated / removed endpoints
+
+> Endpoints in code but slated for removal. Important for risk assessment.
+
+| Endpoint | Deprecated since | Replacement | Evidence |
+|---|---|---|---|
+| `<e.g. POST /v0/charges>` | `<2025-01-15>` | `<POST /v1/charges>` | `<CHANGELOG.md:42>` [verified] |
+
+---
+
+## 7. Risks / gaps
+
+- **Authentication drift**: `<e.g. system uses 3 different auth schemes — pick one for the consumer>`
+- **Versioning chaos**: `<e.g. /v0, /v1, /v2-beta coexist; freeze v2 for the consumer>`
+- **Hidden internal endpoints**: `<e.g. 8 admin endpoints behind basic auth — flag in risk-raw.md>`
+
+---
+
+## 8. Machine-readable (YAML) — consumed by `neodoo-integrate`
+
+```yaml
+# extract/api.md → machine-readable form
+# Parsed by neodoo-integrate Phase 5 (OPT-IN) to map endpoints to consumer contracts.
+api:
+  outbound:
+    - endpoint: https://api.example.com/v1/resource
+      method: POST
+      auth: bearer | oauth2 | hmac | mTLS | api-key | none
+      rate_limit: "<n rps | unbounded | unknown>"
+      equivalent_in_neoai: <null | "apps/web/server/api/<path>.ts">
+      port_strategy: reference | wrap | extract-pattern | drop-in | source-port
+      license: <SPDX identifier>
+      evidence: <path:line>
+  inbound:
+    - endpoint: POST /v1/webhooks/incoming
+      method: POST
+      auth: hmac
+      rate_limit: "1000 rps"
+      equivalent_in_neoai: <null | path>
+      port_strategy: reference
+      license: <SPDX>
+      evidence: <path:line>
+  sdks:
+    - name: <sdk-name>
+      language: go | ts | py | rs | java
+      repo: <github url>
+      license: <SPDX>
+      port_strategy: drop-in | source-port | wrap
+  internal_rpc:
+    - caller: <service-name>
+      callee: <service-name>
+      transport: grpc | http | queue
+      auth: mTLS | jwt | none
+  deprecated:
+    - endpoint: <path>
+      deprecated_since: <YYYY-MM-DD>
+      replacement: <path>
+```
+
+---
+
+## 9. Cross-references
+
+- `wiki/architecture.md` — call graphs and request flows
+- `extract/dependencies.md` — direct SDK/transitive HTTP deps
+- `license-audit.md` — SPDX per outbound SDK
+- `risk-raw.md` — auth/versioning risks captured here propagate to scoring

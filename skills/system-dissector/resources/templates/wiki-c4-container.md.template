@@ -1,0 +1,211 @@
+# C4 — Container — <system-name>
+
+<!--
+Phase 3 output of system-dissector. C4 Level 2: zoom into the system
+boundary and show processes, services, and data stores. Companion to
+c4-context.md (which shows who + what, not how).
+
+Filling convention:
+- One container = one deployable unit (process, daemon, static bundle,
+  database, queue). Keep counts <= 12 per diagram; split if larger.
+- Each container MUST have a technology choice AND a responsibility.
+- Communication arrows MUST specify protocol, never just direction.
+-->
+
+## Evidence
+
+<!--
+Mandatory anti-hallucination gate. Container inventory MUST reflect real
+running processes — observe via `docker ps`, `kubectl get pods`, `ps aux`,
+not from memory or outdated runbooks.
+-->
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Source repo**: `<path or URL>` — `<sha or tag>` [verified|estimated]
+- **Inventory source**: `<e.g. docker compose ps, kubectl get pods -A, terraform state>` [verified|estimated]
+- **Snapshot date**: `<date of inventory>` [verified|estimated]
+
+### Evidence rules
+
+- Every container in the diagram MUST be observed in real infra (`docker ps`, `kubectl get pods`).
+- Tech/version per container MUST match the deployed artifact (CI tag, image digest).
+- Communication protocol claims MUST be confirmed by config (compose, helm, nginx upstream) or pcap.
+- If 0% of containers are tagged, the C4 container view is fictional — re-observe.
+
+## Como usar este documento
+
+- **Audience**: SRE/Arquiteto dimensionando scaling, capacity planning ou incident response.
+- **Next action**: revisar `## 4. Communication patterns` + `## 6. Deployment topology` antes de capacity plan.
+- **Quando re-verificar**: após deploy de novo container, mudança de protocolo ou scaling event anômalo.
+
+## 1. Container overview
+
+A `<system-name>` deployment consists of the containers listed below. Each
+container is a deployable unit that can be scaled, restarted, and
+versioned independently.
+
+| # | Container | Tech | Responsibility | Scaling unit |
+|---|---|---|---|---|
+| 1 | `<name>` | `<runtime>` | `<one-line>` | `<horizontal / vertical / singleton>` |
+| 2 | `<name>` | `<runtime>` | `<one-line>` | `<scaling>` |
+| 3 | `<name>` | `<runtime>` | `<one-line>` | `<scaling>` |
+| 4 | `<name>` | `<runtime>` | `<one-line>` | `<scaling>` |
+| 5 | `<name>` | `<runtime>` | `<one-line>` | `<scaling>` |
+| 6 | `<name>` | `<runtime>` | `<one-line>` | `<scaling>` |
+
+---
+
+## 2. Container details
+
+### 2.1 `<container-name>`
+
+- **Technology**: `<runtime + framework + version>`
+- **Source**: `<repo path / docker image>`
+- **Build artifact**: `<binary / image / bundle>`
+- **Instances**: `<N, scaling rule>`
+- **Responsibility**: `<one-line>`
+- **Public surface**: `<ports, endpoints>`
+- **Configuration**: `<config file, env vars>`
+- **Reference**: `<file:line>`
+
+### 2.2 `<container-name>`
+
+- **Technology**: `<...>`
+- **Source**: `<...>`
+- **Build artifact**: `<...>`
+- **Instances**: `<...>`
+- **Responsibility**: `<...>`
+- **Public surface**: `<...>`
+- **Configuration**: `<...>`
+- **Reference**: `<...>`
+
+### 2.3 `<container-name>`
+
+(copy the structure above)
+
+### 2.4 `<container-name>`
+
+(copy the structure above)
+
+### 2.5 `<container-name>`
+
+(copy the structure above)
+
+### 2.6 `<container-name>`
+
+(copy the structure above)
+
+---
+
+## 3. Data stores
+
+| Store | Tech | Holds | Read pattern | Write pattern | Retention |
+|---|---|---|---|---|---|
+| `<name>` | `<engine>` | `<what data>` | `<queries>` | `<mutations>` | `<days>` |
+| `<name>` | `<engine>` | `<what data>` | `<queries>` | `<mutations>` | `<days>` |
+| `<name>` | `<engine>` | `<what data>` | `<queries>` | `<mutations>` | `<days>` |
+
+### 3.1 Store-specific notes
+
+- `<store-name>`: <replication, backup, encryption-at-rest, PII handling>
+- `<store-name>`: <notes>
+- `<store-name>`: <notes>
+
+---
+
+## 4. Communication patterns
+
+| From | To | Protocol | Direction | Payload | Frequency | Sync / async |
+|---|---|---|---|---|---|---|
+| `<container-A>` | `<container-B>` | `<HTTP/gRPC/TCP/...>` | `<read/write/both>` | `<format>` | `<rps>` | `<sync/async>` |
+| `<container-A>` | `<container-B>` | `<protocol>` | `<direction>` | `<format>` | `<freq>` | `<sync/async>` |
+| `<container-A>` | `<container-B>` | `<protocol>` | `<direction>` | `<format>` | `<freq>` | `<sync/async>` |
+| `<container-A>` | `<store>` | `<SQL/nosql/...>` | `<direction>` | `<query/mutation>` | `<freq>` | `<sync/async>` |
+| `<container-A>` | `<store>` | `<protocol>` | `<direction>` | `<payload>` | `<freq>` | `<sync/async>` |
+
+---
+
+## 5. Container diagram
+
+```mermaid
+C4Container
+    title Container diagram for <system-name>
+
+    Person(user, "End user", "Persona roles described in c4-context.md")
+
+    System_Boundary(b1, "<system-name>") {
+        Container(web, "<web>", "<tech>", "Browser UI, SPA")
+        Container(api, "<api>", "<tech>", "HTTP API, business logic")
+        Container(worker, "<worker>", "<tech>", "Async jobs, scheduled tasks")
+        Container(scheduler, "<scheduler>", "<tech>", "Cron / heartbeat orchestrator")
+        ContainerDb(db, "<primary db>", "<engine>", "Source of truth")
+        ContainerDb(cache, "<cache>", "<engine>", "Hot data, TTL-based")
+        ContainerDb(queue, "<queue>", "<engine>", "Async messaging")
+    }
+
+    System_Ext(extA, "<External system A>", "<what it does>")
+    System_Ext(extB, "<External system B>", "<what it does>")
+
+    Rel(user, web, "Uses", "HTTPS")
+    Rel(web, api, "Calls", "HTTPS/JSON")
+    Rel(api, db, "Reads/writes", "SQL")
+    Rel(api, cache, "Gets/sets", "TCP")
+    Rel(api, queue, "Publishes", "AMQP")
+    Rel(worker, queue, "Consumes", "AMQP")
+    Rel(worker, db, "Updates", "SQL")
+    Rel(scheduler, worker, "Triggers", "HTTPS")
+    Rel(api, extA, "Calls", "HTTPS")
+    Rel(worker, extB, "Syncs", "HTTPS")
+```
+
+---
+
+## 6. Deployment topology
+
+<!--
+Where each container runs in production. Helps readers understand
+operational constraints.
+-->
+
+| Container | Host / k8s node | Min replicas | Max replicas | Resources |
+|---|---|---|---|---|
+| `<name>` | `<node selector>` | `<n>` | `<n>` | `<cpu/mem request+limit>` |
+| `<name>` | `<node selector>` | `<n>` | `<n>` | `<resources>` |
+| `<name>` | `<node selector>` | `<n>` | `<n>` | `<resources>` |
+
+### 6.1 Network topology
+
+- `<edge LB / ingress>`: <responsibility>
+- `<service mesh>`: <if any>
+- `<VPC / peering>`: <if any>
+
+---
+
+## 7. Notes
+
+- <architectural observation at container level>
+- <observation>
+- <observation>
+
+---
+
+## 8. C4 container checklist
+
+### Evidence gate
+
+- [ ] `## Evidence` section filled with overall status + inventory source
+- [ ] Every container observed in real infra (`docker ps`, `kubectl get pods`)
+- [ ] Tech/version per container matches deployed artifact (image digest)
+- [ ] Communication protocols confirmed by config or pcap
+- [ ] >=50% of containers are `[verified]`
+
+### Coverage
+
+- [ ] All containers in the diagram are listed in section 1
+- [ ] Each container has tech + responsibility + scaling unit
+- [ ] Data stores called out separately (ContainerDb)
+- [ ] Communication arrows specify protocol AND direction AND sync/async
+- [ ] Diagram renders cleanly (<= 12 nodes total)
+- [ ] Deployment topology captured (min/max replicas, node selectors)
+- [ ] File committed to `dissects/<system>/wiki/c4-container.md`
+- [ ] Cross-link from `wiki/index.md` works

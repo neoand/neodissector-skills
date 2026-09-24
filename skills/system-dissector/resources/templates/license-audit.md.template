@@ -1,0 +1,209 @@
+# Extract — License Audit — <system-name>
+
+<!--
+Phase 4 output of system-dissector. Comprehensive SPDX inventory of every
+license in the target system: top-level, direct deps, transitive deps.
+
+Goal: feed `neodoo-integrate` (Phase 5, OPT-IN) and the `007` / `cred-omega`
+security gates the evidence required to decide whether each component
+can be ported into a proprietary SaaS (arbitrary distribution model).
+LGPL-3, AGPL-3, and proprietary dual-license nuances apply per consumer.
+
+Reference: `neodoo-integrate/SKILL.md` §"Ethical considerations
+(licenses)" for the allow/block matrix per license family.
+-->
+
+## Como usar este documento
+
+- **Audience**: legal/compliance gate + dev lead deciding which deps
+  can enter the consumer's `THIRD_PARTY_LICENSES.txt`.
+- **Next action**: read §3 (blocking licenses) before approving any
+  port; AGPL/SSPL/proprietary items need explicit sign-off.
+- **Quando re-verificar**: a cada release maior do sistema-alvo, ou
+  quando `extract/dependencies.md` mudar.
+
+## Evidence
+
+- **Overall status**: `verified` | `estimated` | `mixed` *(pick one)*
+- **Probe commands** (escolha conforme o ecossistema):
+  - Python: `pip-licenses --format=markdown --with-authors` [verified|estimated]
+  - Go: `go install github.com/google/go-licenses@latest && go-licenses csv ./...` [verified|estimated]
+  - JS/TS: `pnpm ls --depth=Infinity --json | jq` + manual SPDX check [verified|estimated]
+  - Generic: `reuse lint --root <repo>` (SPDX compliance) [verified|estimated]
+- **Last audit**: `<YYYY-MM-DD>`
+
+---
+
+## 1. Top-level license (the target system itself)
+
+| Field | Value | Evidence |
+|---|---|---|
+| **License** | `<e.g. LGPL-3.0>` | `<repo/LICENSE:3>` [verified] |
+| **SPDX** | `<SPDX identifier>` | [verified|estimated] |
+| **Copyright holder** | `<name>` | [verified|estimated] |
+| **First commit year** | `<YYYY>` | [verified|estimated] |
+| **Last commit year** | `<YYYY>` | [verified|estimated] |
+| **Dual-licensed?** | yes / no | [verified|estimated] |
+| **Commercial alternative?** | yes / no | [verified|estimated] |
+
+### 1.1 Compatibility verdict for the consumer (proprietary SaaS)
+
+- `<e.g. LGPL-3.0 is compatible with the consumer's distribution model via
+  dynamic linking. No source-disclosure obligation for the consumer itself,
+  but any consumer modifications to LGPL code must be published.>` [verified|estimated]
+
+---
+
+## 2. Direct dependencies
+
+> Dependencies declared in `package.json`, `pyproject.toml`, `go.mod`,
+> `Gemfile`, `Cargo.toml`, `pom.xml`, etc. One row per dep.
+
+| Dependency | Version | License (SPDX) | Source / repo | Notes |
+|---|---|---|---|---|
+| `<stripe>` | `<14.x>` | `<MIT>` | `<github.com/stripe/stripe-node>` | transitive to MIT ecosystem |
+| `<requests>` | `<2.31.x>` | `<Apache-2.0>` | `<github.com/psf/requests>` | |
+| `<gpl-licensed-lib>` | `<1.x>` | `<GPL-3.0-or-later>` | `<github.com/foo/bar>` | ⚠️ BLOCKING — see §3 |
+| `<...>` | | | | |
+
+### 2.1 By license family
+
+| License family | Direct dep count | Transitive count (sampled) |
+|---|---|---|
+| MIT | `<n>` | `<n>` |
+| Apache-2.0 | `<n>` | `<n>` |
+| BSD-2/3-Clause | `<n>` | `<n>` |
+| ISC | `<n>` | `<n>` |
+| LGPL-2.1/3.0 | `<n>` | `<n>` |
+| MPL-2.0 | `<n>` | `<n>` |
+| GPL-2.0/3.0 | `<n>` | `<n>` |
+| AGPL-3.0 | `<n>` | `<n>` |
+| SSPL | `<n>` | `<n>` |
+| BSL / source-available | `<n>` | `<n>` |
+| Proprietary | `<n>` | `<n>` |
+| Unknown / missing SPDX | `<n>` | `<n>` |
+
+---
+
+## 3. Blocking licenses (require sign-off before any port)
+
+> These licenses are *incompatible* with a proprietary SaaS distribution
+> model unless explicitly approved by the consumer's legal team.
+
+| License | Why blocking | Affected dep(s) | Required action |
+|---|---|---|---|
+| AGPL-3.0 | Network copyleft — SaaS must open source | `<dep>` | Replace or wrap; NO source-port |
+| SSPL | Server Side Public License — equivalent to AGPL | `<dep>` | Replace or extract-pattern only |
+| GPL-2.0/3.0 | Viral copyleft — would force the consumer to GPL | `<dep>` | Reference only; NEVER source-port |
+| Proprietary | Requires commercial agreement | `<dep>` | Anderson sign-off per dep |
+| BSL with non-commercial clause | Blocks commercial use | `<dep>` | Verify clause, replace if needed |
+| Unknown / missing SPDX | Cannot audit | `<dep>` | Identify license before port |
+
+### 3.1 Decision per blocking dep
+
+For each blocking dep, capture:
+
+- `<dep-name>` — **DECISION**: `replace | wrap | reference-only | approved-by-anderson-on-YYYY-MM-DD`
+- Rationale: `<1-3 sentences>`
+- Replacement candidate: `<dep-name>` under `<license>` if `replace`
+
+---
+
+## 4. Conditional licenses (need verification per port)
+
+> LGPL, MPL, and similar licenses are *conditionally* compatible. Each
+> use site must be reviewed.
+
+| License | Condition | Use site(s) | Status |
+|---|---|---|---|
+| LGPL-2.1/3.0 | Dynamic linking OR user-relinkable | `<dep>` in `<module>` | ✅ verified / ⚠️ modify-only-if-allowed |
+| MPL-2.0 | File-level copyleft | `<dep>` in `<module>` | ✅ verified |
+| BSL without non-commercial clause | Per-license commercial OK | `<dep>` | ⚠️ confirm clause |
+
+### 4.1 LGPL nuances (read carefully)
+
+- LGPL requires **dynamic linking** OR the ability for the end user to
+  re-link manually.
+- In Go, an LGPL module imported via `import` without modification is OK
+  — Go modules are dynamically linked by the linker.
+- If the consumer modifies the LGPL source, the consumer must publish the
+  modified source AND ensure users can re-link. Document modifications in
+  the consumer's port plan artifact (§"Modifications").
+- In Odoo, modules under LGPL-3 (the OCA default) can be used as
+  dependencies. Same dynamic linking obligation applies.
+- **Risk**: a transitive LGPL dep can be contaminated by a GPL/AGPL
+  transitive dep — always run `go-licenses` / `pip-licenses` /
+  `reuse lint` on the *final* dep tree, not just the top level.
+
+---
+
+## 5. Permissive licenses (safe to use with attribution)
+
+| License | Count | Required attribution file | Status |
+|---|---|---|---|
+| MIT | `<n>` | `THIRD_PARTY_LICENSES.txt` (Anderson convention) | ✅ |
+| Apache-2.0 | `<n>` | Same + `NOTICE` file if shipped | ✅ |
+| BSD-2/3-Clause | `<n>` | `THIRD_PARTY_LICENSES.txt` | ✅ |
+| ISC | `<n>` | `THIRD_PARTY_LICENSES.txt` | ✅ |
+
+### 5.1 Attribution template
+
+```text
+This product includes software developed by <author(s)>.
+<Dependency> <version>
+Copyright <(c) YYYY Author Name>
+License: <SPDX> (<URL URL>)
+Original source: <github URL>
+Modifications: <list or "none">
+```
+
+---
+
+## 6. Per-component license verdict (for Phase 5 scoring)
+
+> This table is consumed by `extract/components.md` (C3 column of the
+> C1-C6 rubric) and by `neodoo-integrate` Phase 5 risk gate.
+
+| Component | License | Verdict | Notes |
+|---|---|---|---|
+| `<component-A>` | MIT | ✅ safe | |
+| `<component-B>` | Apache-2.0 | ✅ safe | patent grant |
+| `<component-C>` | LGPL-3.0 | ⚠️ conditional | dynamic linking only |
+| `<component-D>` | AGPL-3.0 | ❌ blocking | reference design only |
+| `<component-F>` | Proprietary | ❌ blocking | Anderson sign-off required |
+
+---
+
+## 7. Audit commands reference
+
+```bash
+# Python
+pip install pip-licenses
+pip-licenses --format=markdown --with-authors --with-urls > licenses.md
+
+# Go
+go install github.com/google/go-licenses@latest
+go-licenses csv ./... > licenses.csv
+
+# JS / TS
+pnpm ls --depth=Infinity --json | jq -r '.[] | "\(.name)@\(.version) \(.license // "UNKNOWN")"'
+
+# Generic SPDX compliance
+pip install reuse
+reuse lint --root /path/to/repo
+
+# Full audit tree (detect transitive contamination)
+go mod graph | go-licenses check
+pip install pip-licenses && pip-licenses --with-system
+```
+
+---
+
+## 8. Cross-references
+
+- `extract/components.md` — C3 column reads verdict from §6 above
+- `extract/dependencies.md` — raw dep list (this file is the SPDX layer on top)
+- `extract/api.md` — outbound API endpoints also need license check
+- `risk-raw.md` — license risks tied to specific components
+- `integrate/port-plan/<x>-port.md` — must cite license verdict + modifications
+- `neodoo-integrate/SKILL.md` §"Ethical considerations (licenses)" — canonical allow/block matrix

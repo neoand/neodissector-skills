@@ -1,0 +1,176 @@
+# Handoff — Learning Path — <system-name>
+
+<!--
+Phase 5 artifact. Designed for an engineer who has never seen
+<system-name> and needs to reach fluency.
+
+The sequence is opinionated but reasonable. Adapt to your downstream
+constraints — skip whole chapters if you're shipping a fork that
+deliberately drops a feature, add extras if you're doing security-
+critical work.
+-->
+
+## Audience
+
+You are an engineer who needs to:
+
+- (a) **understand** <system-name> at an architecture level (so you can
+  debug, audit, or extend); OR
+- (b) **port/fork** <system-name> into a sibling project; OR
+- (c) **integrate** with <system-name> as a black box.
+
+Pick your reader profile at the start — it changes the milestone
+weights at the end of this document.
+
+## Pre-requisites
+
+Concrete skills/knowledge the reader MUST already have. Be honest —
+additions to this list raise the ramp cost; removals save time.
+
+| Domain | Required | Nice to have |
+|---|---|---|
+| **Languages** | <e.g. Python 3.11+>, <e.g. TypeScript 5> | <e.g. Rust, Go> |
+| **Frameworks** | <e.g. FastAPI>, <e.g. React> | <e.g. Next.js> |
+| **Concepts** | <e.g. event-driven I/O>, <e.g. pub/sub> | <e.g. CRDT, Raft> |
+| **Tooling** | <e.g. git, ripgrep, jq> | <e.g. mitmproxy, Wireshark> |
+| **Domain** | <e.g. distributed systems fundamentals> | <e.g. payments compliance> |
+
+## Recommended reading sequence
+
+The order respects dependencies — don't skip chapters unless you know
+exactly why. Each chapter cites paths inside this dissect (relative
+to `dissects/<system>/`).
+
+### Phase A — Orient (1-2 hours)
+
+1. `triagem.md` — what is this system, what does it do, key
+   metadata.
+2. `handoff/README.md` — entry point + index of Phase 5 artifacts.
+3. `handoff/components-priority.md` — what matters (Tier 1) vs
+   what's cargo cult (Tier 3).
+4. `deep-dive/architecture.md` — high-level architecture diagram.
+
+**Milestone A**: You can describe the system in 3 sentences and
+name its Tier 1 components from memory.
+
+### Phase B — Understand internals (3-6 hours, paraleliza por módulo)
+
+5. For each Tier 1 component:
+   - The corresponding `deep-dive/<component>-analysis.md`.
+   - The relevant `wiki/modules.md` section.
+   - The corresponding `extract/components.md` row.
+6. `deep-dive/data-flows.md` — how data moves between modules.
+
+**Milestone B**: You can trace a single user request end-to-end
+through the system and name the components it touches.
+
+### Phase C — Patterns and decisions (2-4 hours)
+
+7. `handoff/patterns-catalog.md` — the 5+ patterns you MUST
+   understand before changing anything.
+8. `handoff/decisions.md` — at minimum read every ADR titled with
+   an inviolable constraint (look for `Good:` / `Bad:` ratios).
+9. `extract/patterns.md` + `extract/algorithms.md` — long-form
+   corroboration.
+
+**Milestone C**: You can describe 3 patterns and 3 decisions
+without referring to your notes.
+
+### Phase D — Reuse assessment (1-2 hours)
+
+10. `handoff/reuse-checklist.md` — for each Tier 1/2 component,
+    mark `reuse / wrap / clean-room / skip`. Justify with C1-C6.
+11. `handoff/components-priority.md` — confirm your ranked picks
+    against the proposed roadmap (sequence only, not destinations).
+12. (OPT-IN) `<downstream>-integrate/` if a destination-specific plan
+    exists. Otherwise just consume this `handoff/`.
+
+**Milestone D**: You can produce a written justification of one
+reuse decision in 5 minutes (with citations).
+
+### Phase E — Implementation (variable; only for reader profile (b)/(c))
+
+13. `handoff/implementation-guide.md` — first Tier 1 component
+    recipe.
+14. Iterative work — see §"Exercises" below.
+
+## Comprehension milestones — quick check
+
+Use these as a self-test before claiming you've "learned" the system.
+
+| Milestone | What you can do without notes |
+|---|---|
+| After Phase A | Describe system + Top-5 Tier 1 + tech stack anchor |
+| After Phase B | Trace a user request through 5+ components |
+| After Phase C | Reproduce 3 patterns + 3 decisions from memory |
+| After Phase D | Defend a reuse-decision for one Tier 1 component |
+| After Phase E | Implement one Tier 1 component clean-room from spec |
+
+## Exercises (suggested)
+
+Pick the ones that match your reader profile. They reference paths
+inside this dissect (relative to `dissects/<system>/`).
+
+### Exercise 1 (orientation, 30 min)
+
+Open `handoff/README.md` and reconstruct the entry point without
+reading anything else. Time yourself. If you can't, your
+onboarding doc has gaps.
+
+### Exercise 2 (deep dive, 1-2 h)
+
+Pick the top Tier 1 component from `handoff/components-priority.md`.
+Read:
+- `deep-dive/<component>-analysis.md`
+- The relevant section of `wiki/modules.md`
+- The corresponding row in `extract/components.md`
+
+Write a 1-page summary citing at least 5 `file:line` references into
+the source code under `repo/` (if source-available dissect) or
+`bin/` (if binary).
+
+### Exercise 3 (pattern identification, 1 h)
+
+Open 3 different files in `repo/`. For each, identify which pattern
+from `handoff/patterns-catalog.md` it instantiates. If a file
+instantiates none of the catalogued patterns, propose a new
+candidate.
+
+### Exercise 4 (decision audit, 1-2 h)
+
+Pick one ADR from `handoff/decisions.md`. Open the source file
+referenced in the YAML `source:` field. Verify the decision is
+still honored by the current code. If broken, that's a regression
+in the upstream system — log it in `risk-raw.md`.
+
+### Exercise 5 (clean-room implementation, 1 day)
+
+Pick one Tier 1 component from `handoff/implementation-guide.md`.
+Implement it from scratch following only the spec — do not read
+the source code under `repo/`. Compare your implementation to the
+original side-by-side and write a 1-page diff analysis. This is
+the Compaq/IBM "Time A / Time B" methodology (1981-83) that proved
+copyright doesn't protect functional interfaces.
+
+## External references
+
+Cite sources cited by the original authors and important background.
+These should be reachable independent of this dissect.
+
+- **Papers / standards**:
+  - <RFC 7231 — HTTP/1.1 Semantics and Content>
+  - <e.g. "Consistent Hashing and Random Trees" — Karger et al.>
+- **Library docs**:
+  - <e.g. https://docs.python.org/3/library/asyncio.html>
+- **Companion dissects**:
+  - `<workspace>/dissects/_cross-system-patterns.md` — if
+    pattern-relevant, link the cross-system observation here.
+
+## When to come back
+
+This document is alive. Re-read when:
+
+- The upstream <system-name> releases a major version.
+- The downstream team introduces a new Tier 1 component.
+- You discover an invariant violation (see `risk-raw.md`).
+- You onboard a new teammate to this slice of <system-name>.

@@ -1,0 +1,130 @@
+# Handoff — Reuse Checklist — <system-name>
+
+<!--
+Phase 5 artifact. Decision matrix per Tier 1/2 component:
+`reuse / wrap-or-adapter / clean-room / don't port`.
+
+Each row links to its source scoring (`extract/components.md`) and
+to the implementation cost estimate that drives the choice.
+-->
+
+## How to use this checklist
+
+For each Tier 1/2 component from `handoff/components-priority.md`:
+
+1. Read the **Source scoring** (`extract/components.md`).
+2. Read the **License verdict** (`extract/license-audit.md`) — if
+   incompatible, the choice collapses to either `wrap/adapter`
+   (incompatible but compatible surface) or `don't port`.
+3. Mark one option with `[x]`. Justify in one line citing the
+   C1-C6 scores.
+4. Note the **Effort estimate** for the chosen option. Effort is
+   P (≤ 1 day), M (≤ 1 week), G (≥ 1 week).
+
+A component you mark `don't port` is still worth understanding — keep
+the entry; the *why* matters as much as the *what*.
+
+## Decision matrix
+
+### Tier 1 components (score ≥ 50)
+
+| # | Component | Score | License | Decision | Effort | Justification |
+|---|---|---|---|---|---|---|
+| 1 | <component A> | 58/60 | MIT | [ ] reuse / [ ] wrap / [ ] clean / [ ] skip | P/M/G | <one line citing C1-C6> |
+| 2 | <component B> | 54/60 | Apache-2.0 | [ ] reuse / [ ] wrap / [ ] clean / [ ] skip | P/M/G | <one line citing C1-C6> |
+| 3 | <component C> | 51/60 | LGPL-3.0 | [ ] reuse / [ ] wrap / [ ] clean / [ ] skip | P/M/G | <one line citing C1-C6> |
+
+### Tier 2 components (score 40-49)
+
+| # | Component | Score | License | Decision | Effort | Justification |
+|---|---|---|---|---|---|---|
+| 4 | <component D> | 47/60 | MIT | [ ] reuse / [ ] wrap / [ ] clean / [ ] skip | P/M/G | <one line> |
+| 5 | <component E> | 42/60 | GPL-3.0 | [ ] reuse / [ ] wrap / [ ] clean / [ ] skip | P/M/G | <one line> |
+
+### Components already on the `don't port` list
+
+These have been excluded early. Kept here for audit trail:
+
+- **<component X>**: <one-line reason — e.g. score 22, redundant
+  with std lib, license incompatible>.
+
+## Decision vocabulary
+
+`reuse direct` — copy the component as-is into your downstream.
+Only valid when license permits redistribution *and* your
+deployment model is compatible (e.g. LGPL requires dynamic
+linking).
+
+`wrap/adapter` — keep the component as an external dependency;
+write a thin adapter in your codebase to translate its surface to
+your idioms. Use when license is permissive but the upstream API
+doesn't match yours.
+
+`clean-room` — re-implement following
+`handoff/implementation-guide.md`. Use when:
+- License is incompatible with your licensing model.
+- The component is tightly coupled to its original platform.
+- You want to evolve it independently of upstream.
+
+`don't port` — explicitly skip. Use when:
+- The component solves a problem your downstream doesn't have.
+- A standard library or third-party package covers the same need.
+- Score < 30 and not worth even a wrapper.
+
+## Per-component rationale (optional)
+
+Use this section if any decision needs > 1 line of justification.
+
+### <component A> — clean-room
+
+Why clean-room and not reuse:
+
+1. License is **<X>** — your downstream ships under **<Y>**, so
+   redistribution requires a wrapper at minimum.
+2. API surface is **<small/large>** — clean-room lets you collapse
+   the surface to what your downstream actually needs.
+3. Maintenance velocity risk: <one line citing C4>.
+
+Estimated effort: **<P/M/G>** (Time A + Time B + bridge review).
+
+### <component B> — wrap/adapter
+
+Why wrap and not clean-room:
+
+1. License permits redistribution under same terms.
+2. C4 (maintenance velocity) is **high** — frequent upstream
+   updates you want to track.
+3. API surface is too large to clone affordably; an adapter is
+   cheaper than re-implementing.
+
+Estimated effort: **<P/M/G>** (adapter + tests).
+
+## Summary
+
+- Total Tier 1 chosen for `reuse direct`: **N**
+- Total Tier 1 chosen for `wrap/adapter`: **N**
+- Total Tier 1 chosen for `clean-room`: **N**
+- Total Tier 1 `don't port`: **N**
+- Total estimated effort: **<aggregate person-weeks>**
+
+## Cross-references
+
+- `extract/components.md` — scoring C1-C6 source.
+- `extract/license-audit.md` — license verdict per component.
+- `handoff/components-priority.md` — Tier 1/2 ordering.
+- `handoff/implementation-guide.md` — clean-room recipe for
+  components marked `clean-room`.
+- `risk-raw.md` — risks per chosen path.
+
+## Next actions
+
+After completing this checklist:
+
+1. For each `wrap/adapter`, draft the adapter interface in your
+   downstream codebase.
+2. For each `clean-room`, hand the component to the implementation
+   team with `handoff/implementation-guide.md` as anchor.
+3. For each `don't port`, add an entry to `risk-raw.md` justifying
+   the explicit skip (so future audits don't re-litigate).
+4. Re-run `validator.py check <system>` to ensure all side-effects
+   are coherent.

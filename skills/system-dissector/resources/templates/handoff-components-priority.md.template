@@ -1,0 +1,178 @@
+# Handoff — Components Priority — <system-name>
+
+<!--
+Phase 5 artifact. Final ranking of components by reusability score
+(C1-C6 /60), with effort, risk, and recommendation per row.
+
+This file is **not destination-specific**. The roadmap at the end
+sequences work logically. It does NOT pick a target stack, a fork
+strategy, or a deployment topology. The destination-specific
+companion (OPT-IN, e.g. `neodoo-integrate`) produces a sibling
+plan if needed.
+
+Tier thresholds:
+  Tier 1: ≥ 50 /60 — recommend to take action now
+  Tier 2: 40-49 /60 — actionable, schedule in current cycle
+  Tier 3: < 40  /60 — deprioritize or skip
+
+The C1-C6 rubric (six criteria, each 0-10):
+  C1 Compatibility  — fit with our stack / idioms
+  C2 Code quality   — readability, test coverage, type safety
+  C3 License        — compatibility with our licensing model
+  C4 Velocity       — upstream activity, breakage cadence
+  C5 Footprint      — dependency weight, runtime cost
+  C6 Reversibility  — cost of undo if we change our mind
+-->
+
+## Summary
+
+- **Total components scored**: <N>
+- **Tier 1 (≥50)**: <N>
+- **Tier 2 (40-49)**: <N>
+- **Tier 3 (<40)**: <N>
+
+## Tier 1 — Take action now (score ≥ 50)
+
+| Rank | Component | Score | C1 | C2 | C3 | C4 | C5 | C6 | Effort | Risk | Recommendation |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <component A> | **<N>/60** | <n> | <n> | <n> | <n> | <n> | <n> | P / M / G | Low/Med/High | <reuse\|wrap\|clean-room> |
+| 2 | <component B> | **<N>/60** | <n> | <n> | <n> | <n> | <n> | <n> | P / M / G | Low/Med/High | <reuse\|wrap\|clean-room> |
+| 3 | <component C> | **<N>/60** | <n> | <n> | <n> | <n> | <n> | <n> | P / M / G | Low/Med/High | <reuse\|wrap\|clean-room> |
+
+### Per-row rationale (Tier 1)
+
+#### <component A> — <recommendation>
+
+- **C1 (Compatibility)**: <one-line why this score>.
+- **C2 (Code quality)**: <one-line>.
+- **C3 (License)**: <SPDX> — <compatible/conditional/incompatible>.
+- **C4 (Velocity)**: <commits/month, breakage frequency>.
+- **C5 (Footprint)**: <deps, runtime cost>.
+- **C6 (Reversibility)**: <cost to swap out later>.
+- **Effort estimate**: <P|M|G> — <one-line breakdown>.
+- **Risk**: <Low/Med/High> — <one-line>.
+- **Recommendation**: <reuse|wrap|clean-room> — <one-line why>.
+
+#### <component B> — <recommendation>
+
+(copy the structure above)
+
+#### <component C> — <recommendation>
+
+(copy the structure above)
+
+---
+
+## Tier 2 — Schedule in current cycle (score 40-49)
+
+| Rank | Component | Score | C1 | C2 | C3 | C4 | C5 | C6 | Effort | Risk | Recommendation |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 4 | <component D> | **<N>/60** | <n> | <n> | <n> | <n> | <n> | <n> | P / M / G | Low/Med/High | <reuse\|wrap\|clean-room> |
+| 5 | <component E> | **<N>/60** | <n> | <n> | <n> | <n> | <n> | <n> | P / M / G | Low/Med/High | <reuse\|wrap\|clean-room> |
+
+### Per-row rationale (Tier 2)
+
+For each, fill the same per-row rationale block from Tier 1.
+
+---
+
+## Tier 3 — Deprioritize or skip (score < 40)
+
+| Rank | Component | Score | Recommendation |
+|---|---|---|---|
+| 6 | <component F> | <N>/60 | deprioritize or skip |
+| 7 | <component G> | <N>/60 | skip |
+| ... | | | |
+
+For Tier 3, one-line is enough — these are not the focus of this
+handoff. Cite the scoring line so audit trail is intact.
+
+---
+
+## Logical roadmap
+
+Sequencing only — does not assume a specific destination stack.
+Rationale: deliver each phase behind a working artifact so progress
+is observable.
+
+### Sprint 1 — Read & classify (foundation)
+
+1. Land `learning-path.md` walkthrough for the team.
+2. Confirm `reuse-checklist.md` decisions for all Tier 1.
+3. Open ADRs in `decisions.md` marked `inviolable` — extract
+   invariant tests for your test suite.
+
+### Sprint 2 — Implement Tier 1 (highest priority items only)
+
+4. Walk `implementation-guide.md` for the top Tier 1 component.
+5. Set up Time A (spec) and Time B (clean-room) or run A-only.
+6. Validate against `extract/components.md` row.
+
+### Sprint 3 — Wrap Tier 2 + clean-room Tier 1 (second pass)
+
+7. For Tier 2 components marked `wrap`, draft adapters.
+8. For Tier 1 components marked `clean-room`, run the
+   implementation guide through the team.
+9. Re-score if any C3 (license) or C4 (velocity) changed during
+   the cycle.
+
+### Sprint 4 — Defer / skip Tier 3 + close audit
+
+10. Confirm Tier 3 `skip` decisions still hold.
+11. Update `risk-raw.md` with skip-justifications.
+12. Run `validator.py check <system>` for a final go/no-go.
+
+> **Note**: the sprint names are illustrative. Replace with the
+> team's actual sprint cadence. The sequencing principle
+> (foundation → Tier 1 wrap → Tier 2 wrap → Tier 3 cleanup) is the
+> load-bearing part.
+
+## Effort rollup
+
+| Path | Components | Effort each | Total |
+|---|---|---|---|
+| reuse direct | <list> | <P/M/G> | <person-days> |
+| wrap/adapter | <list> | <P/M/G> | <person-days> |
+| clean-room | <list> | <P/M/G> | <person-days> |
+| skip | <list> | 0 | 0 |
+
+**Aggregate effort**: <N person-weeks>.
+
+## Risk register
+
+Row-level risks are in `risk-raw.md`. Summary risks tied to the
+ranking:
+
+- **License contagion** — if any Tier 1 component lands as `reuse
+  direct` under LGPL/GPL, the entire downstream binary may inherit
+  obligations. Confirm with legal before merging.
+- **Velocity drift** — components with C4 ≥ 8 have rapid upstream
+  changes; pin or vendor to avoid being pulled along.
+- **Footprint creep** — Tier 1 components with C5 ≤ 4 have heavy
+  dependency trees; budget CI minutes accordingly.
+
+## Cross-references
+
+- `extract/components.md` — Phase 4 source with full per-component
+  scoring.
+- `handoff/reuse-checklist.md` — explicit per-row decision matrix.
+- `extract/license-audit.md` — license verdicts.
+- `extract/risk-raw.md` — pre-scoring risk notes.
+- `handoff/decisions.md` — ADRs that override the ranking
+  (e.g. ADR says "never touch X" — promote to skip even if score is
+  high).
+- `handoff/implementation-guide.md` — recipes for items marked
+  `clean-room`.
+
+## Audit checklist
+
+Before declaring the handoff complete:
+
+- [ ] Tier 1 fully justified (every component has a full rationale
+      block).
+- [ ] License verdicts cross-referenced from
+      `extract/license-audit.md`.
+- [ ] Effort estimates reviewed by at least one implementer.
+- [ ] Roadmap has team sign-off.
+- [ ] Risk register rolled up from `risk-raw.md`.
+- [ ] `validator.py check <system>` passed.

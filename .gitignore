@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts (from install.py)
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Temporary clone (from install.py --update)
+.tmp-clone/

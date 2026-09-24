@@ -1,0 +1,141 @@
+# Handoff — Patterns Catalog — <system-name>
+
+<!--
+Phase 5 artifact. Catalog of the patterns observed in <system-name>
+that are worth carrying into any downstream project.
+
+Each entry is self-contained: name, problem, observed instance
+(where in <system-name> it appears), variations, generic
+implementation example (pseudo-code, not literal source), and
+when to apply / when to avoid. Generic examples are intentionally
+vague so the consuming team can fill in their own stack.
+
+This file is derived from `extract/patterns.md` (Phase 4) — every
+entry here MUST link back to its source.
+-->
+
+## How to use this catalog
+
+- **For re-implementation**: pick the patterns marked **lifting**
+  in the table below and embed them in your spec.
+- **For auditing**: confirm each pattern is still honored in the
+  current source. Missing pattern = either refactor candidate or
+  accidental deviation, depending on ADR.
+- **For learning**: read patterns in order — they build on each
+  other.
+
+## Pattern 1 — <name>
+
+### Problem
+
+<One sentence: what class of problem does this pattern solve? E.g.
+"Maintain ordered, indexed access to a logically sorted stream
+without keeping it entirely in memory.">
+
+### Observed implementation in <system-name>
+
+- **Where**: `<repo relative path>:<line range>` or
+  `<bin section>:<offset range>`
+- **What you see**: <2-3 sentences describing the observation,
+  NOT quoting source>
+- **Cross-ref**: `extract/patterns.md#<pattern-1>`
+
+### Variations
+
+- <Variation A — name>: <brief>. Use when <condition>.
+- <Variation B — name>: <brief>. Avoid when <condition>.
+
+### Generic implementation example
+
+```python
+# Pseudo-code; translate to your stack of choice
+class <PatternName>:
+    def __init__(self, config: Config) -> None:
+        self.state = <state>
+        self.lock = <mechanism>
+
+    def process(self, item: Item) -> Result:
+        with self.lock:
+            # <core invariant>
+            return result
+```
+
+**Don't** lift this as-is — implement it for your stack
+following the generic shape, *not* the line-by-line construction.
+
+### When to apply
+
+- <e.g.> You need to maintain invariant X while processing Y.
+- <e.g.> You control the deploy lifecycle (pode reiniciar o
+  processo graciosamente).
+
+### When to avoid
+
+- <e.g.> Latency budget < N ms and pattern's overhead > N/2 ms.
+- <e.g.> State must outlive process restart and pattern doesn't
+  handle persistence.
+
+### Lifting this pattern
+
+| Aspect | Verdict |
+|---|---|
+| Worth reusing? | □ yes □ no □ conditional |
+| Effort | P / M / G |
+| Risks | <one-line> |
+
+---
+
+## Pattern 2 — <name>
+
+(copy the structure from Pattern 1)
+
+---
+
+## Pattern 3 — <name>
+
+(copy the structure from Pattern 1)
+
+---
+
+## Pattern 4 — <name>
+
+(copy the structure from Pattern 1)
+
+---
+
+## Pattern 5 — <name>
+
+(copy the structure from Pattern 1)
+
+---
+
+## Patterns NOT in this catalog
+
+Patterns discovered but intentionally excluded (and why):
+
+- **<Pattern X>** — too coupled to <language/runtime>; can't lift
+  without rewriting the whole component.
+- **<Pattern Y>** — superseded by Pattern 3 (see ADR-NNN).
+- **<Pattern Z>** — solved by standard library in most modern
+  stacks; no need to vendor.
+
+## Cross-references
+
+- `extract/patterns.md` — Phase 4 source for all entries here.
+- `extract/components.md` — pattern hosts per component.
+- `handoff/decisions.md` — ADRs that constrain pattern variations.
+- `handoff/implementation-guide.md` — how to embed a pattern in
+  a clean-room spec.
+- `<workspace>/dissects/_cross-system-patterns.md` — same pattern
+  in other systems, if any (cross-system validation).
+
+## Audit checklist
+
+For each pattern above, fill:
+
+- [ ] Confirmed <pattern> still appears in current source
+      (`<repo path>`).
+- [ ] ADR constraints still met (cite `handoff/decisions.md`).
+- [ ] License compatibility verified (`extract/license-audit.md`).
+- [ ] Effort estimate updated against actual implementation
+      outcome.

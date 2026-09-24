@@ -1,0 +1,164 @@
+---
+pattern: <category>/<subcategory>/<name>  # ex: agent-memory/biomimetic/retain
+status: draft|validated|portado
+consolidado_em: <ISO date>
+total_origins: <N>  # quantos dissects contribuíram
+gerado_por: consolidate_patterns.py
+---
+
+# Cross-System Patterns — <category>
+
+> **Propósito**: catálogo consolidado de patterns extraídos de **MÚLTIPLOS
+> dissects**. Cada pattern aqui foi observado em ≥ 2 sistemas diferentes
+> (validação cross-system). Use este artefato quando precisar decidir entre
+> *implementar canônico*, *referenciar* (lib existente) ou *comprar*
+> (vendor) — nunca para copy-paste cego.
+
+## Audience
+
+- **Arquiteto/engenheiro sênior** procurando inspiração validada para
+  resolver problema X em código próprio.
+- **Tech lead** decidindo o que vale portar vs referenciar/comprar
+  (agnóstico de stack destino).
+
+## Como ler
+
+1. **Header YAML** → categoria, status, contagem de origens.
+2. **Sumário por pattern** → tabela com: nome, sistemas, score
+   clean-room médio, recomendação.
+3. **Detalhe por pattern** → spec funcional + divergências + snippet
+   canônico + métricas.
+
+## Sumário
+
+<!-- Tabela gerada automaticamente por consolidate_patterns.py list.
+     Mantenha o cabeçalho em sincronia com a saída do script. -->
+
+| # | Pattern | Sistemas | Score médio | Recomendação |
+|---|---------|----------|-------------|--------------|
+| 1 | `<pattern-name>` | `<s1>`, `<s2>` | `<X/10>` | `<implementar canônico / referenciar / comprar>` |
+
+---
+
+## Patterns
+
+### Pattern: <nome>
+
+**Spec funcional** (clean-room — sem código colado):
+
+> Descrição em pseudocódigo de entradas, saídas, invariantes e fluxo de
+> controle. Substitua `<placeholders>` por texto concreto após o script
+> gerar o esqueleto.
+
+```text
+function <nome>(input: T) -> Result<U, E>:
+    # Pre-condition
+    assert precondition(input)
+
+    # Main flow
+    let validated = validate(input)
+    let result = transform(validated)
+
+    # Post-condition
+    assert postcondition(result)
+
+    return Ok(result)
+```
+
+**Origens observadas** (cross-system — mínimo 2 sistemas):
+
+- `dissects/<sistema1>/extract/patterns.md` — Pattern 2.1 `<nome>` (score clean-room: 8/10)
+- `dissects/<sistema2>/extract/patterns.md` — Pattern 2.3 `<nome>` (score clean-room: 9/10)
+
+**Implementações divergentes**:
+
+| Sistema | Abordagem | Complexidade | Stack | Onde |
+|---------|-----------|--------------|-------|------|
+| `<s1>` | `<descrição>` | `O(N)` | `<Python/Go/Rust>` | `<file:line>` |
+| `<s2>` | `<descrição>` | `O(N log N)` | `<Rust/Python>` | `<file:line>` |
+
+**Recomendação**:
+
+- [ ] **Implementar canônico** — múltiplas implementações divergentes sinalizam um domínio estável que vale extrair.
+- [ ] **Referenciar** (usar lib existente) — uma implementação já cobre 80%+ dos casos.
+- [ ] **Comprar** (vendor SaaS) — pattern commodity, sem diferencial competitivo.
+
+**Justificativa**: <2-3 linhas explicando a recomendação, citando os scores
+clean-room e a frequência observada.>
+
+**Snippet canônico** (opcional — só se houver consenso claro):
+
+```<lang>
+// Pseudocódigo ou exemplo simplificado
+// SEMPRE clean-room (máx 5 linhas)
+// Proveniente de um synthesize das 2+ implementações observadas
+```
+
+**Métricas cross-system**:
+
+- **Frequência**: `<N>`/`<total_dissects>` dissects (~`<pct>%`).
+- **Score clean-room médio**: `<X.X>`/10 (calculado pela média ponderada).
+- **Complexidade média**: `O(<.>)`.
+- **Camadas onde aparece**: `<integration / data / security / ui / arch>`.
+- **Última observação**: `<YYYY-MM-DD>` (state.json mais recente).
+
+---
+
+### Pattern: <nome-2>
+
+(Mesma estrutura do pattern anterior. Mínimo 2 origens para constar
+neste catálogo — patterns single-system ficam em
+`dissects/<s>/extract/patterns.md` apenas.)
+
+---
+
+## Anti-patterns cross-system
+
+<!-- Patterns que aparecem em ≥2 sistemas mas que NÃO devem ser portados.
+     Marque aqui quando a evidência cross-system revelar problema. -->
+
+- **`<nome>`** — `<por que não generaliza apesar de aparecer em múltiplos sistemas>` — observado em `<s1>`, `<s2>`.
+
+---
+
+## Próximas ações
+
+1. **Implementação canônica** (se aplicável) — criar
+   `~/.agents/projects/neoai-architecture-patterns.md` referenciando este
+   catálogo.
+2. **Skill dedicada** — se algum pattern atingir score médio ≥ 8/10 E
+   frequência ≥ 50%, criar `~/.agents/skills/<pattern>-pattern/` para
+   captura dedicada.
+3. **Revisão periódica** — re-rodar `consolidate_patterns.py consolidate`
+   após cada novo dissect concluído (Phase 4 = completed).
+
+---
+
+## Metadados de geração
+
+- **Gerado por**: `consolidate_patterns.py consolidate`
+- **Timestamp**: `<YYYY-MM-DDTHH:MM:SSZ>`
+- **Total dissects varridos**: `<N>`
+- **Total patterns extraídos**: `<N>`
+- **Patterns cross-system (≥2 origens)**: `<N>`
+- **Patterns single-system**: `<N>` (desconsiderados)
+
+---
+
+## Checklist de manutenção
+
+### Cobertura
+
+- [ ] Pelo menos 2 dissects contribuíram com patterns
+- [ ] Cada pattern tem spec funcional em pseudocódigo
+- [ ] Cada pattern tem ≥2 origens documentadas
+- [ ] Cada pattern tem recomendação marcada
+- [ ] Cada pattern tem snippet canônico (se houver consenso)
+
+### Validação
+
+- [ ] Scores clean-room foram calculados pelo script (não editados manualmente)
+- [ ] Recomendações foram revisadas por humano após geração automática
+- [ ] Nenhum código colado — apenas referências `<file:line>`
+- [ ] Nenhum placeholder residual `<...>` no arquivo final
+- [ ] Header YAML atualizado após cada `consolidate`

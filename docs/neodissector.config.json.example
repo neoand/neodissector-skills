@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "allowLegacyEdits": false,
+  "allowedPaths": [],
+  "_doc": "Schema agnóstico de stack. Defaults seguros: allowLegacyEdits=false bloqueia TODA escrita fora dos territórios do neodissector. Para liberar paths específicos (ex: ao portar componentes extraídos para outro stack), adicione globs em allowedPaths. Documentação completa em ~/.agents/skills/system-dissector/NEODISSECTOR-CONFIG.md"
+}
