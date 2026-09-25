@@ -2,6 +2,50 @@
 
 Todas as mudanças notáveis neste repo são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] — 2026-09-25
+
+### Adicionado
+
+- `skills/playwright-re/SKILL.md` — nova skill companion para automação browser (Playwright + Chromium).
+- `skills/playwright-re/resources/scripts/discover-api.py` — descoberta automática de OpenAPI/Swagger/GraphQL em URLs canônicas. Tenta 17 caminhos.
+- `skills/playwright-re/resources/scripts/capture-network.py` — captura HAR completo + console logs via Playwright.
+- `skills/playwright-re/resources/scripts/crawl-spa.py` — crawler para SPAs (React/Angular/Vue) com screenshots.
+- `skills/playwright-re/resources/references/playwright-recipes.md` — 7 padrões prontos.
+- `skills/system-dissector/resources/scripts/prompts/triage-ui-only.md` — **NOVO 6º sub-agent prompt** (`triage-ui-only`) com workflow guiado 4-1-3:
+  - 4 fontes de informação (A=API doc, B=site docs, C=demo, D=Playwright)
+  - Usuário escolhe combinação
+  - Uma opção por vez (sem wall-of-text)
+  - Outputs padronizados em `evidence/`
+- Adicionado `ui` como novo `VALID_TIPOS` em `dissect_utils.py`.
+
+### Cenário target
+
+Sistemas SaaS /proprietários SEM código-fonte nem binário (só UI + API pública).
+Antes: usava-se `triage-protocol` (Wireshark puro) ou fall-back para análise manual.
+Agora: workflow guiado completo + Playwright + Chromium + auto-discovery de API.
+
+### Pipeline exemplo
+
+```bash
+# 1. Sub-agent invoca o workflow guiado
+# 2. Usuário responde com credenciais ou URL canônica
+# 3. Auto-discovery encontra API
+python3 ~/.agents/skills/playwright-re/resources/scripts/discover-api.py \
+  --base-url https://app.vendor.com --output-dir evidence/api-spec
+# 4. Login + HAR capture
+python3 ~/.agents/skills/playwright-re/resources/scripts/capture-network.py \
+  --url https://app.vendor.com/login --username demo@vendor.com --password demo123
+# 5. SPA crawl
+python3 ~/.agents/skills/playwright-re/resources/scripts/crawl-spa.py \
+  --base-url https://app.vendor.com --max-depth 3 --output-dir evidence/web
+# 6. Phase 2-5 seguem normalmente com surface data
+# 7. Sanitize → consumer-package → verify-no-verbatim gate
+```
+
+### Compatibilidade
+
+100% compatível com v1.2.0. Skills existentes (23) inalteradas. Apenas adição.
+
 ## [1.2.0] — 2026-09-25
 
 ### Adicionado
