@@ -2,6 +2,35 @@
 
 Todas as mudanças notáveis neste repo são documentadas aqui. O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] — 2026-09-25
+
+### Adicionado
+
+- `skills/neodissector-sanitizer/SKILL.md` — nova skill para gerar pacote clean-room a partir de dissects.
+- `skills/neodissector-sanitizer/resources/scripts/sanitize.py` — CLI que transforma `dissects/<s>/` (verbatim interno) em `<consumer-package>/` (sanitizado para DEV).
+- `skills/neodissector-sanitizer/resources/scripts/verify-no-verbatim.py` — gate CI que assert zero verbatim no pacote.
+- `skills/neodissector-sanitizer/resources/references/sanitization-rules.md` — catálogo das 7 categorias de regras.
+
+### Transformações validadas (closed-erp-patterns-2026 — target ERP-A 19.0)
+
+Sanitizou 1743 arquivos internos em 940 arquivos de pacote:
+- 1.419 paths verbatim → descrições conceituais
+- 326 function signatures → "Função que <verbo> (parâmetros: ...)"
+- 16 class names → "# <kind> do módulo"
+- 696 vendor refs (vendor-A) → "[vendor-marker-redacted]"
+- 4 hosts internos → "[host-redacted]"
+- TOTAL: 2.461 transformações. Pacote LIMPO (verify-no-verbatim.py exit 0).
+
+### Motivação
+
+Anderson 2026-09-25: "tudo é ouro" no dissecação, mas a entrega ao DEV tem que
+ser desnaturalizada. O DEV reproduz fielmente SEM saber COMO nem DE ONDE vem.
+A meta final = produto Odoo 19 próprio, em produção, livre de licenciamento enterprise.
+
+### Compatibilidade
+
+100% compatível com v1.1.1. Skills existentes (22) inalteradas. Apenas adição.
+
 ## [1.1.1] — 2026-09-24
 
 ### Corrigido
