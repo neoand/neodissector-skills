@@ -50,6 +50,14 @@ PATTERNS = {
         r"^\s*class\s+([A-Z]\w*(?:View|Template|Model|Mixin|Wizard|Adapter))\s*\(",
         re.MULTILINE,
     ),
+    "PRIVATE_METHOD": re.compile(
+        r"^def\s+_[a-zA-Z_]\w*\s*\(",  # def _foo(
+        re.MULTILINE,
+    ),
+    "VERBATIM_METHOD_BODY": re.compile(
+        r"^\s+(?:self\.env\[|return \w+\(|raise ValidationError|return request\.make_response|@http\.route)",
+        re.MULTILINE,
+    ),
     "VENDOR_SDK": re.compile(
         r"\b(?:vendor-A|target-ai-ext|comms-vendor|ext-ax|ext-iap-vendor|target-stack-internal|target-bank-ext)\b",
         re.IGNORECASE,
